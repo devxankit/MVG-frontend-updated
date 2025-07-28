@@ -259,17 +259,18 @@ const Header = () => {
         </div>
       </div>
       {/* Mobile Drawer & Overlay */}
-      <div className={`fixed inset-0 z-40 md:hidden transition-all duration-300 ${isMenuOpen ? 'pointer-events-auto' : 'pointer-events-none'}`}> 
-        {/* Overlay */}
-        <div
-          className={`fixed inset-0 bg-black bg-opacity-40 transition-opacity duration-300 ${isMenuOpen ? 'opacity-100' : 'opacity-0'}`}
-          onClick={() => setIsMenuOpen(false)}
-        />
-        {/* Drawer */}
-        <aside
-          ref={drawerRef}
-          className={`fixed top-0 right-0 h-full w-4/5 max-w-xs bg-white shadow-lg z-50 transform transition-transform duration-300 ${isMenuOpen ? 'translate-x-0' : 'translate-x-full'}`}
-        >
+      {isMenuOpen && (
+        <div className="fixed inset-0 z-40 md:hidden">
+          {/* Overlay */}
+          <div
+            className="fixed inset-0 bg-black bg-opacity-40 transition-opacity duration-300"
+            onClick={() => setIsMenuOpen(false)}
+          />
+          {/* Drawer */}
+          <aside
+            ref={drawerRef}
+            className="fixed top-0 right-0 h-full w-4/5 max-w-xs bg-white shadow-lg z-50 transform transition-transform duration-300 animate-slide-in-right"
+          >
           <div className="flex justify-between items-center px-4 py-4 border-b">
             <span className="text-xl font-bold text-primary-600">Menu</span>
             <button onClick={() => setIsMenuOpen(false)} aria-label="Close menu" className="text-gray-600 hover:text-primary-600 text-2xl transition-colors duration-200">
@@ -310,7 +311,8 @@ const Header = () => {
             </div>
           </nav>
         </aside>
-      </div>
+        </div>
+      )}
     </header>
   );
 };
