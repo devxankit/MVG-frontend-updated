@@ -1383,13 +1383,13 @@ const [actionLoading, setActionLoading] = useState(null);
       )}
 
       {/* Edit Product Modal */}
-      {editModal.open  6 (
-        div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40"
-          div className="bg-white rounded-lg shadow-lg p-8 w-full max-w-lg relative"
-            button className="absolute top-2 right-2 text-gray-400 hover:text-gray-600" onClick={() = setEditModal({ open: false, product: null })}times;/button
-            h2 className="text-xl font-bold mb-4"Edit Producth2
-            {editError  div className="text-red-500 mb-2"{editError}/div}
-            form onSubmit={handleEditSubmit} className="space-y-4"
+      {editModal.open && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
+          <div className="bg-white rounded-lg shadow-lg p-8 w-full max-w-lg relative">
+            <button className="absolute top-2 right-2 text-gray-400 hover:text-gray-600" onClick={() => setEditModal({ open: false, product: null })}>&times;</button>
+            <h2 className="text-xl font-bold mb-4">Edit Product</h2>
+            {editError && <div className="text-red-500 mb-2">{editError}</div>}
+            <form onSubmit={handleEditSubmit} className="space-y-4">
               <input type="text" className="form-input" placeholder="Product Name" value={editForm.name} onChange={e => setEditForm({ ...editForm, name: e.target.value })} required />
               <textarea className="form-input" placeholder="Description" value={editForm.description} onChange={e => setEditForm({ ...editForm, description: e.target.value })} required />
               <input type="number" className="form-input" placeholder="Price" value={editForm.price} onChange={e => setEditForm({ ...editForm, price: e.target.value })} required min="0" />
