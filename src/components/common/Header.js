@@ -127,7 +127,7 @@ const Header = () => {
               <Link to="/categories" className="px-1.5 py-1 rounded transition-colors duration-200 hover:bg-primary-50 hover:text-primary-600">Categories</Link>
               {/* Conditionally render Become a Vendor */}
               {(!isAuthenticated || (user && user.role !== 'seller') || (user && user.role === 'admin')) && (
-                <Link to="/vendor-registration" className="px-1.5 py-1 rounded transition-colors duration-200 hover:bg-primary-50 hover:text-primary-600">Become a Vendor</Link>
+                <Link to="/login" className="px-1.5 py-1 rounded transition-colors duration-200 hover:bg-primary-50 hover:text-primary-600">Become a Vendor</Link>
               )}
             </nav>
           </div>
@@ -283,7 +283,7 @@ const Header = () => {
             <Link to="/categories" className="nav-link px-2 py-2 rounded hover:bg-primary-50 hover:text-primary-600 transition-colors duration-200" onClick={() => setIsMenuOpen(false)}>Categories</Link>
             {/* Conditionally render Become a Vendor */}
             {(!isAuthenticated || (user && user.role !== 'seller') || (user && user.role === 'admin')) && (
-              <Link to="/vendor-registration" className="nav-link px-2 py-2 rounded hover:bg-primary-50 hover:text-primary-600 transition-colors duration-200" onClick={() => setIsMenuOpen(false)}>Become a Vendor</Link>
+              <Link to="/login" className="nav-link px-2 py-2 rounded hover:bg-primary-50 hover:text-primary-600 transition-colors duration-200" onClick={() => setIsMenuOpen(false)}>Become a Vendor</Link>
             )}
            
             {isAuthenticated && user?.role === 'seller' && (

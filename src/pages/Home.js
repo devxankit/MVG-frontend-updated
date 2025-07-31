@@ -279,7 +279,7 @@ const Home = () => {
             Join thousands of vendors and start your e-commerce journey today.
           </p>
           <Link
-            to="/vendor-registration"
+            to="/login"
             className="bg-white text-primary-600 px-8 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors inline-flex items-center"
           >
             Become a Vendor
