@@ -1776,44 +1776,163 @@ const [imageUploadProgress, setImageUploadProgress] = useState(0);
       {/* Edit Product Modal */}
       {editModal.open && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
-          <div className="bg-white rounded-lg shadow-lg p-8 w-full max-w-lg relative">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto p-6">
             <button className="absolute top-2 right-2 text-gray-400 hover:text-gray-600" onClick={() => setEditModal({ open: false, product: null })}>&times;</button>
-            <h2 className="text-xl font-bold mb-4">Edit Product</h2>
-            {editError && <div className="text-red-500 mb-2">{editError}</div>}
-            <form onSubmit={handleEditSubmit} className="space-y-4">
-              <input type="text" className="form-input" placeholder="Product Name" value={editForm.name} onChange={e => setEditForm({ ...editForm, name: e.target.value })} required />
-              <textarea className="form-input" placeholder="Description" value={editForm.description} onChange={e => setEditForm({ ...editForm, description: e.target.value })} required />
-              <input type="number" className="form-input" placeholder="Price" value={editForm.price} onChange={e => setEditForm({ ...editForm, price: e.target.value })} required min="0" />
-              <input type="number" className="form-input" placeholder="Stock" value={editForm.stock} onChange={e => setEditForm({ ...editForm, stock: e.target.value })} required min="0" />
-              <input type="text" className="form-input" placeholder="Brand" value={editForm.brand} onChange={e => setEditForm({ ...editForm, brand: e.target.value })} required />
-              <input type="text" className="form-input" placeholder="SKU" value={editForm.sku} onChange={e => setEditForm({ ...editForm, sku: e.target.value })} required />
-              <div className="flex gap-2">
-                <select
-                  className="form-input"
-                  value={editForm.category || ''}
-                  onChange={e => setEditForm({ ...editForm, category: e.target.value, subCategory: '' })}
-                  required
-                >
-                  <option value="">Select Main Category</option>
-                  {categories.filter(cat => !cat.parentCategory).map(cat => (
-                    <option key={cat._id} value={cat._id}>{cat.name}</option>
-                  ))}
-                </select>
-                <select
-                  className="form-input"
-                  value={editForm.subCategory || ''}
-                  onChange={e => setEditForm({ ...editForm, subCategory: e.target.value })}
-                  required
-                  disabled={!editForm.category}
-                >
-                  <option value="">Select Subcategory</option>
-                  {categories.filter(cat => cat.parentCategory === editForm.category).map(subcat => (
-                    <option key={subcat._id} value={subcat._id}>{subcat.name}</option>
-                  ))}
-                </select>
+            <h2 className="text-2xl font-bold mb-4">Edit Product</h2>
+            {editError && <div className="mb-4 p-2 bg-red-100 text-red-700 rounded">{editError}</div>}
+            <form onSubmit={handleEditSubmit} className="space-y-6">
+              {/* Name */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Product Name *</label>
+                <input type="text" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" value={editForm.name || ''} onChange={e => setEditForm({ ...editForm, name: e.target.value })} required />
               </div>
-              <input type="text" className="form-input" placeholder="Image URL" value={editForm.images && editForm.images[0] ? editForm.images[0].url : ''} onChange={e => setEditForm({ ...editForm, images: [{ url: e.target.value }] })} required />
-              <button type="submit" className="btn-primary w-full">Update Product</button>
+              {/* Short Description */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Short Description *</label>
+                <textarea rows={2} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" value={editForm.description || ''} onChange={e => setEditForm({ ...editForm, description: e.target.value })} required />
+              </div>
+              {/* Detailed Description */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Detailed Description *</label>
+                <textarea rows={4} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" value={editForm.productDescription || ''} onChange={e => setEditForm({ ...editForm, productDescription: e.target.value })} required />
+              </div>
+              {/* Pricing & Stock */}
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Pricing & Stock</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Price (₹) *</label>
+                    <input type="number" step="0.01" min="0" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" value={editForm.price || ''} onChange={e => setEditForm({ ...editForm, price: e.target.value })} required />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Compare Price (₹)</label>
+                    <input type="number" step="0.01" min="0" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" value={editForm.comparePrice || ''} onChange={e => setEditForm({ ...editForm, comparePrice: e.target.value })} />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Stock Quantity *</label>
+                    <input type="number" min="0" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" value={editForm.stock || ''} onChange={e => setEditForm({ ...editForm, stock: e.target.value })} required />
+                  </div>
+                </div>
+              </div>
+              {/* Brand & SKU */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Brand *</label>
+                  <input type="text" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" value={editForm.brand || ''} onChange={e => setEditForm({ ...editForm, brand: e.target.value })} required />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">SKU *</label>
+                  <input type="text" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" value={editForm.sku || ''} onChange={e => setEditForm({ ...editForm, sku: e.target.value })} required />
+                </div>
+              </div>
+              {/* Category & Subcategory */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Main Category *</label>
+                  <select className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" value={editForm.category || ''} onChange={e => setEditForm({ ...editForm, category: e.target.value, subCategory: '' })} required>
+                    <option value="">Select Main Category</option>
+                    {categories.filter(cat => !cat.parentCategory).map(cat => (
+                      <option key={cat._id} value={cat._id}>{cat.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Subcategory *</label>
+                  <select className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" value={editForm.subCategory || ''} onChange={e => setEditForm({ ...editForm, subCategory: e.target.value })} required disabled={!editForm.category}>
+                    <option value="">Select Subcategory</option>
+                    {categories.filter(cat => cat.parentCategory === editForm.category).map(subcat => (
+                      <option key={subcat._id} value={subcat._id}>{subcat.name}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              {/* Features & Tags */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Features</label>
+                  <input type="text" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" value={editForm.features || ''} onChange={e => setEditForm({ ...editForm, features: e.target.value })} placeholder="Comma-separated features" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Tags</label>
+                  <input type="text" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" value={editForm.tags || ''} onChange={e => setEditForm({ ...editForm, tags: e.target.value })} placeholder="Comma-separated tags" />
+                </div>
+              </div>
+              {/* Image Upload/Preview */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Product Images</label>
+                <div
+                  className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center cursor-pointer hover:border-blue-400 hover:bg-blue-50 transition"
+                  onDragOver={e => { e.preventDefault(); e.currentTarget.classList.add('border-blue-400', 'bg-blue-50'); }}
+                  onDragLeave={e => { e.preventDefault(); e.currentTarget.classList.remove('border-blue-400', 'bg-blue-50'); }}
+                  onDrop={e => {
+                    e.preventDefault();
+                    e.currentTarget.classList.remove('border-blue-400', 'bg-blue-50');
+                    const files = Array.from(e.dataTransfer.files).filter(file => file.type.startsWith('image/'));
+                    if (files.length > 0) {
+                      setEditForm({ ...editForm, imageFiles: files });
+                    }
+                  }}
+                >
+                  <input
+                    type="file"
+                    multiple
+                    accept="image/*"
+                    className="hidden"
+                    id="edit-product-images"
+                    onChange={e => {
+                      const files = Array.from(e.target.files);
+                      setEditForm({ ...editForm, imageFiles: files });
+                    }}
+                  />
+                  <label htmlFor="edit-product-images" className="cursor-pointer">
+                    <svg className="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
+                      <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                    <p className="mt-2 text-sm text-gray-600">
+                      <span className="font-medium text-blue-600 hover:text-blue-500">Click to upload</span> or drag and drop
+                    </p>
+                    <p className="text-xs text-gray-500 mt-1">PNG, JPG, GIF up to 5MB each (max 5 images)</p>
+                  </label>
+                </div>
+                {/* Preview uploaded images */}
+                {(editForm.imageFiles && editForm.imageFiles.length > 0) ? (
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-2">
+                    {editForm.imageFiles.map((file, index) => (
+                      <div key={index} className="relative group">
+                        <img src={URL.createObjectURL(file)} alt={`Preview ${index + 1}`} className="w-full h-24 object-cover rounded-lg border border-gray-200" />
+                        <button type="button" onClick={() => setEditForm({ ...editForm, imageFiles: editForm.imageFiles.filter((_, i) => i !== index) })} className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity">×</button>
+                        {index === 0 && <div className="absolute top-1 left-1 bg-blue-500 text-white text-xs px-2 py-1 rounded">Primary</div>}
+                      </div>
+                    ))}
+                  </div>
+                ) : (editForm.images && editForm.images.length > 0) ? (
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-2">
+                    {editForm.images.map((img, index) => (
+                      <div key={index} className="relative group">
+                        <img src={img.url} alt={`Image ${index + 1}`} className="w-full h-24 object-cover rounded-lg border border-gray-200" />
+                        {/* Optionally add remove button for existing images */}
+                      </div>
+                    ))}
+                  </div>
+                ) : null}
+              </div>
+              {/* Submit/Cancel */}
+              <div className="flex justify-end gap-2 mt-6">
+                <button type="button" onClick={() => setEditModal({ open: false, product: null })} className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors">Cancel</button>
+                <button type="submit" disabled={actionLoading === editModal.product._id + 'edit'} className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center">
+                  {actionLoading === editModal.product._id + 'edit' ? (
+                    <>
+                      <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Updating Product...
+                    </>
+                  ) : (
+                    'Update Product'
+                  )}
+                </button>
+              </div>
             </form>
           </div>
         </div>
