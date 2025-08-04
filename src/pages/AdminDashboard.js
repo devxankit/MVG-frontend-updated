@@ -942,7 +942,7 @@ const [imageUploadProgress, setImageUploadProgress] = useState(0);
                           <th className="px-2 py-2 border">Stock</th>
                           <th className="px-2 py-2 border">Date Added</th>
                           <th className="px-2 py-2 border">Seller Count</th>
-                          <th className="px-2 py-2 border">Price Range</th>
+                          <th className="px-2 py-2 border">Price</th>
                           <th className="px-2 py-2 border">Actions</th>
                         </tr>
                       </thead>
@@ -951,14 +951,16 @@ const [imageUploadProgress, setImageUploadProgress] = useState(0);
                           <tr><td colSpan={8} className="text-center py-8 text-gray-400">No products found.</td></tr>
                         ) : paginatedProducts.map(product => {
                           const sellersForProduct = sellerListings.filter(listing => listing.product?._id === product._id);
-                          const prices = sellersForProduct.map(l => l.sellerPrice);
-                          const minPrice = prices.length ? Math.min(...prices) : null;
-                          const maxPrice = prices.length ? Math.max(...prices) : null;
                           return (
                             <tr key={product._id} className="hover:bg-gray-50">
                               <td className="px-2 py-2 border text-center"><img src={product.images?.[0]?.url || '/product-images/default.webp'} alt={product.name} className="w-8 h-8 object-contain rounded border mx-auto" /></td>
                               <td className="px-2 py-2 border font-semibold">{product.name}</td>
-                              <td className="px-2 py-2 border">{typeof product.category === 'object' ? (product.category?.name || '-') : (product.category || '-')}</td>
+                              <td className="px-2 py-2 border">
+                                {product.category?.name || '-'}
+                                {product.subCategory?.name && (
+                                  <span className="text-gray-500 text-xs block">→ {product.subCategory.name}</span>
+                                )}
+                              </td>
                               <td className="px-2 py-2 border text-center">{product.stock ?? '-'}</td>
                               <td className="px-2 py-2 border text-xs text-center">{product.createdAt ? new Date(product.createdAt).toLocaleDateString() : '-'}</td>
                               <td className="px-2 py-2 border text-center">
@@ -966,7 +968,28 @@ const [imageUploadProgress, setImageUploadProgress] = useState(0);
                                   {sellersForProduct.length}
                                 </button>
                               </td>
-                              <td className="px-2 py-2 border text-center">{minPrice !== null ? `${formatINR(minPrice)} - ${formatINR(maxPrice)}` : '-'}</td>
+                              <td className="px-2 py-2 border text-center">
+                                {product.price ? (
+                                  product.variants && product.variants.length > 0 ? 
+                                    (() => {
+                                      // Calculate price range from variants
+                                      let minPrice = Infinity;
+                                      let maxPrice = -Infinity;
+                                      product.variants.forEach(variant => {
+                                        variant.options.forEach(option => {
+                                          if (option.isActive) {
+                                            minPrice = Math.min(minPrice, option.price);
+                                            maxPrice = Math.max(maxPrice, option.price);
+                                          }
+                                        });
+                                      });
+                                      return minPrice === maxPrice ? 
+                                        formatINR(minPrice) : 
+                                        `${formatINR(minPrice)} - ${formatINR(maxPrice)}`;
+                                    })() : 
+                                    formatINR(product.price)
+                                ) : '-'}
+                              </td>
                               <td className="px-2 py-2 border flex gap-1 justify-center">
                                 <button className="text-green-600 hover:text-green-800" title="Edit" onClick={() => handleEdit(product)}><FaEdit /></button>
                                 <button className="text-red-600 hover:text-red-800" title="Delete" onClick={() => handleDelete(product._id)}><FaTrash /></button>

@@ -155,6 +155,9 @@ const SellerDashboard = () => {
   const [sellerPrice, setSellerPrice] = useState('');
   const [listingError, setListingError] = useState('');
   const [showListingModal, setShowListingModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingListing, setEditingListing] = useState(null);
+  const [editPrice, setEditPrice] = useState('');
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -441,6 +444,37 @@ const SellerDashboard = () => {
     setListingLoading(false);
   };
 
+  // Handler for editing listing
+  const handleEditListing = (listing) => {
+    setEditingListing(listing);
+    setEditPrice(listing.sellerPrice.toString());
+    setEditError('');
+    setShowEditModal(true);
+  };
+
+  // Handler for saving edited listing
+  const handleSaveEdit = async () => {
+    if (!editPrice || editPrice <= 0) {
+      setEditError('Please enter a valid price');
+      return;
+    }
+    
+    setEditLoading(true);
+    setEditError('');
+    try {
+      await productAPI.sellerUpdatePrice(editingListing._id, parseFloat(editPrice));
+      const res = await productAPI.sellerGetListings();
+      setSellerListings(res.data);
+      setShowEditModal(false);
+      setEditingListing(null);
+      setEditPrice('');
+    } catch (err) {
+      setEditError(err.response?.data?.message || 'Failed to update price');
+    } finally {
+      setEditLoading(false);
+    }
+  };
+
   return (
     <div className="container mx-auto px-4 py-8">
       {/* Header */}
@@ -651,83 +685,336 @@ const SellerDashboard = () => {
                     {step === 3 && (
                       <div className="mb-6">
                         <h4 className="font-semibold mb-2">Step 3: Select Product</h4>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 overflow-y-auto max-h-[320px]">
-                          {adminProducts.filter(p => p.category === selectedMainCat && p.subCategory === selectedSubCat).map(product => (
-                            <button
-                              key={product._id}
-                              className={`flex items-center p-4 rounded border transition-colors duration-200 w-full ${selectedProduct && selectedProduct._id === product._id ? 'bg-blue-100 border-blue-600' : 'bg-gray-50 border-gray-200 hover:bg-blue-50'}`}
-                              onClick={() => { setSelectedProduct(product); setStep(4); setSellerPrice(product.price); }}
-                            >
-                              <img src={product.images && product.images[0] ? product.images[0].url : '/product-images/default.webp'} alt={product.name} className="w-16 h-16 object-contain rounded mr-4 border" />
-                              <div className="flex-1 text-left">
-                                <div className="font-semibold text-gray-800">{product.name}</div>
-                                <div className="text-xs text-gray-500">Default Price: {formatINR(product.price)}</div>
-                                <div className="text-xs text-gray-500">Brand: {product.brand}</div>
+                        {(() => {
+                          const filteredProducts = adminProducts.filter(p => {
+                            // Get category and subcategory IDs, handling both populated objects and direct IDs
+                            const categoryId = typeof p.category === 'object' ? p.category._id : p.category;
+                            const subCategoryId = typeof p.subCategory === 'object' ? p.subCategory._id : p.subCategory;
+                            
+                            const categoryMatch = categoryId === selectedMainCat;
+                            const subCategoryMatch = subCategoryId === selectedSubCat;
+                            
+                            return categoryMatch && subCategoryMatch;
+                          });
+                          
+                          if (filteredProducts.length === 0) {
+                            return (
+                              <div className="text-center py-8">
+                                <div className="text-gray-400 mb-2">No products found for this category/subcategory.</div>
+                                <div className="text-sm text-gray-500 mb-4">Please contact admin to add products to this category.</div>
+                                <button className="text-blue-600 underline" onClick={() => setStep(2)}>&larr; Back to Subcategories</button>
                               </div>
-                            </button>
-                          ))}
-                        </div>
+                            );
+                          }
+                          
+                          return (
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 overflow-y-auto max-h-[320px]">
+                              {filteredProducts.map(product => (
+                                <button
+                                  key={product._id}
+                                  className={`flex items-center p-4 rounded border transition-colors duration-200 w-full ${selectedProduct && selectedProduct._id === product._id ? 'bg-blue-100 border-blue-600' : 'bg-gray-50 border-gray-200 hover:bg-blue-50'}`}
+                                  onClick={() => { setSelectedProduct(product); setStep(4); setSellerPrice(product.price); }}
+                                >
+                                  <img src={product.images && product.images[0] ? product.images[0].url : '/product-images/default.webp'} alt={product.name} className="w-16 h-16 object-contain rounded mr-4 border" />
+                                  <div className="flex-1 text-left">
+                                    <div className="font-semibold text-gray-800">{product.name}</div>
+                                    <div className="text-xs text-gray-500">Default Price: {formatINR(product.price)}</div>
+                                    <div className="text-xs text-gray-500">Brand: {product.brand}</div>
+                                  </div>
+                                </button>
+                              ))}
+                            </div>
+                          );
+                        })()}
                         <button className="mt-4 text-blue-600 underline" onClick={() => setStep(2)}>&larr; Back to Subcategories</button>
                       </div>
                     )}
                     {step === 4 && selectedProduct && (
-                      <div className="mb-6 max-w-md mx-auto bg-white rounded shadow p-6">
-                        <h4 className="font-semibold mb-2">Step 4: Set Your Price</h4>
-                        <div className="flex items-center gap-4 mb-4">
-                          <img src={selectedProduct.images && selectedProduct.images[0] ? selectedProduct.images[0].url : '/product-images/default.webp'} alt={selectedProduct.name} className="w-20 h-20 object-contain rounded border" />
+                      <div className="mb-6 max-w-md mx-auto bg-white rounded-lg shadow-lg p-6">
+                        <h4 className="font-semibold mb-4 text-lg">Step 4: Set Your Selling Price</h4>
+                        
+                        <div className="flex items-center gap-4 mb-6 p-4 bg-gray-50 rounded-lg">
+                          <img src={selectedProduct.images && selectedProduct.images[0] ? selectedProduct.images[0].url : '/product-images/default.webp'} alt={selectedProduct.name} className="w-20 h-20 object-contain rounded-lg border" />
                           <div>
-                            <div className="font-semibold text-gray-800">{selectedProduct.name}</div>
-                            <div className="text-xs text-gray-500">Default Price: {formatINR(selectedProduct.price)}</div>
-                            <div className="text-xs text-gray-500">Brand: {selectedProduct.brand}</div>
+                            <div className="font-semibold text-gray-900 text-lg">{selectedProduct.name}</div>
+                            <div className="text-sm text-gray-600">{selectedProduct.brand || 'No Brand'}</div>
                           </div>
                         </div>
-                        <input
-                          type="number"
-                          className="form-input w-full mb-2"
-                          placeholder="Enter your price"
-                          value={sellerPrice}
-                          min="0"
-                          onChange={e => setSellerPrice(e.target.value)}
-                        />
-                        {listingError && <div className="text-red-600 mb-2">{listingError}</div>}
-                        <div className="flex gap-2 justify-end">
-                          <button className="bg-gray-200 text-gray-700 px-4 py-2 rounded" onClick={() => setStep(3)}>Back</button>
-                          <button className="bg-blue-600 text-white px-4 py-2 rounded" onClick={async () => { await handleListProduct(); setShowListingModal(false); }} disabled={listingLoading}>{listingLoading ? 'Listing...' : 'List Product'}</button>
+                        
+                        <div className="space-y-4">
+                          <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                            <span className="text-sm text-gray-600">Admin Suggested Price:</span>
+                            <span className="font-medium text-gray-900">{formatINR(selectedProduct.price)}</span>
+                          </div>
+                          
+                          <div className="space-y-2">
+                            <label className="block text-sm font-medium text-gray-700">Your Selling Price:</label>
+                            <input
+                              type="number"
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                              placeholder="Enter your competitive price"
+                              value={sellerPrice}
+                              min="0"
+                              step="0.01"
+                              onChange={e => setSellerPrice(e.target.value)}
+                            />
+                            <p className="text-xs text-gray-500">
+                              Set your own price to compete with other sellers. You can price higher or lower than the admin price.
+                            </p>
+                          </div>
+                          
+                          {sellerPrice && (
+                            <div className={`p-3 rounded-lg text-sm font-medium ${
+                              parseFloat(sellerPrice) > selectedProduct.price
+                                ? 'bg-green-50 text-green-700 border border-green-200'
+                                : parseFloat(sellerPrice) < selectedProduct.price
+                                ? 'bg-orange-50 text-orange-700 border border-orange-200'
+                                : 'bg-blue-50 text-blue-700 border border-blue-200'
+                            }`}>
+                              {parseFloat(sellerPrice) > selectedProduct.price ? (
+                                <span>Price Premium: +{formatINR(parseFloat(sellerPrice) - selectedProduct.price)}</span>
+                              ) : parseFloat(sellerPrice) < selectedProduct.price ? (
+                                <span>Price Discount: -{formatINR(selectedProduct.price - parseFloat(sellerPrice))}</span>
+                              ) : (
+                                <span>Same as Admin Price</span>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                        
+                        {listingError && (
+                          <div className="mt-4 p-3 bg-red-50 text-red-700 rounded-lg text-sm">
+                            {listingError}
+                          </div>
+                        )}
+                        
+                        <div className="flex gap-3 justify-end mt-6">
+                          <button 
+                            className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors" 
+                            onClick={() => setStep(3)}
+                          >
+                            Back
+                          </button>
+                          <button 
+                            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2" 
+                            onClick={async () => { await handleListProduct(); setShowListingModal(false); }} 
+                            disabled={listingLoading || !sellerPrice || parseFloat(sellerPrice) <= 0}
+                          >
+                            {listingLoading ? (
+                              <>
+                                <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"></circle>
+                                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                Listing...
+                              </>
+                            ) : (
+                              'List Product'
+                            )}
+                          </button>
                         </div>
                       </div>
                     )}
                   </div>
                 </div>
               )}
-              {/* Seller's current listings */}
-              <div className="mt-8">
-                <h4 className="font-semibold mb-2">Your Current Listings</h4>
-                {listingLoading && <div className="text-blue-600 mb-2">Updating...</div>}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {sellerListings.filter(l => l.isListed).map(listing => (
-                    <div key={listing._id} className="bg-white rounded shadow p-4 flex items-center gap-4">
-                      <img src={listing.product.images && listing.product.images[0] ? listing.product.images[0].url : '/product-images/default.webp'} alt={listing.product.name} className="w-16 h-16 object-contain rounded border" />
-                      <div className="flex-1">
-                        <div className="font-semibold text-gray-800">{listing.product.name}</div>
-                        <div className="text-xs text-gray-500">Brand: {listing.product.brand}</div>
-                        <div className="text-xs text-gray-500">Default Price: {formatINR(listing.product.price)}</div>
-                        <div className="flex items-center gap-2 mt-2">
-                          <input
-                            type="number"
-                            className="form-input w-24"
-                            value={listing.sellerPrice}
-                            min="0"
-                            onChange={e => handleUpdatePrice(listing._id, e.target.value)}
-                            disabled={listingLoading}
-                          />
-                          <span className="text-xs text-gray-500">Your Price</span>
-                          <button className="text-red-600 ml-4 underline text-xs" onClick={() => handleUnlist(listing._id)} disabled={listingLoading}>Unlist</button>
+
+              {/* Edit Price Modal */}
+              {showEditModal && editingListing && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
+                  <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md mx-4">
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-lg font-semibold text-gray-900">Update Product Price</h3>
+                      <button 
+                        className="text-gray-400 hover:text-gray-600 text-xl" 
+                        onClick={() => setShowEditModal(false)}
+                      >
+                        ×
+                      </button>
+                    </div>
+                    
+                    <div className="mb-6">
+                      <div className="flex items-center gap-4 mb-4">
+                        <img 
+                          src={editingListing.product.images && editingListing.product.images[0] ? editingListing.product.images[0].url : '/product-images/default.webp'} 
+                          alt={editingListing.product.name} 
+                          className="w-16 h-16 object-contain rounded-lg border" 
+                        />
+                        <div>
+                          <h4 className="font-semibold text-gray-900">{editingListing.product.name}</h4>
+                          <p className="text-sm text-gray-600">{editingListing.product.brand || 'No Brand'}</p>
                         </div>
                       </div>
+                      
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                          <span className="text-sm text-gray-600">Admin Price:</span>
+                          <span className="font-medium text-gray-900">{formatINR(editingListing.product.price)}</span>
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <label className="block text-sm font-medium text-gray-700">Your Selling Price:</label>
+                          <input
+                            type="number"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            placeholder="Enter your price"
+                            value={editPrice}
+                            min="0"
+                            step="0.01"
+                            onChange={(e) => setEditPrice(e.target.value)}
+                          />
+                          <p className="text-xs text-gray-500">
+                            Set your own price to compete with other sellers
+                          </p>
+                        </div>
+                        
+                        {editPrice && (
+                          <div className={`p-3 rounded-lg text-sm font-medium ${
+                            parseFloat(editPrice) > editingListing.product.price
+                              ? 'bg-green-50 text-green-700 border border-green-200'
+                              : parseFloat(editPrice) < editingListing.product.price
+                              ? 'bg-orange-50 text-orange-700 border border-orange-200'
+                              : 'bg-blue-50 text-blue-700 border border-blue-200'
+                          }`}>
+                            {parseFloat(editPrice) > editingListing.product.price ? (
+                              <span>Price Premium: +{formatINR(parseFloat(editPrice) - editingListing.product.price)}</span>
+                            ) : parseFloat(editPrice) < editingListing.product.price ? (
+                              <span>Price Discount: -{formatINR(editingListing.product.price - parseFloat(editPrice))}</span>
+                            ) : (
+                              <span>Same as Admin Price</span>
+                            )}
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  ))}
-                  {sellerListings.filter(l => l.isListed).length === 0 && <div className="text-gray-400">You have no active listings. List a product above!</div>}
+                    
+                    {editError && (
+                      <div className="mb-4 p-3 bg-red-50 text-red-700 rounded-lg text-sm">
+                        {editError}
+                      </div>
+                    )}
+                    
+                    <div className="flex gap-3 justify-end">
+                      <button
+                        className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                        onClick={() => setShowEditModal(false)}
+                        disabled={editLoading}
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
+                        onClick={handleSaveEdit}
+                        disabled={editLoading || !editPrice || parseFloat(editPrice) <= 0}
+                      >
+                        {editLoading ? (
+                          <>
+                            <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"></circle>
+                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            Updating...
+                          </>
+                        ) : (
+                          'Update Price'
+                        )}
+                      </button>
+                    </div>
+                  </div>
                 </div>
+              )}
+
+              {/* Seller's current listings */}
+              <div className="mt-8">
+                <h4 className="font-semibold mb-4">Your Current Listings</h4>
+                {listingLoading && <div className="text-blue-600 mb-4">Updating...</div>}
+                
+                {sellerListings.filter(l => l.isListed).length === 0 ? (
+                  <div className="text-center py-8 bg-gray-50 rounded-lg">
+                    <div className="text-gray-400 mb-2">No active listings found</div>
+                    <div className="text-sm text-gray-500">Start by listing a product from the admin catalog above</div>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    {sellerListings.filter(l => l.isListed).map(listing => {
+                      const priceDifference = listing.sellerPrice - listing.product.price;
+                      const isHigher = priceDifference > 0;
+                      const isLower = priceDifference < 0;
+                      
+                      return (
+                        <div key={listing._id} className="bg-white rounded-lg shadow-md border border-gray-200 p-6 hover:shadow-lg transition-shadow">
+                          <div className="flex items-start gap-4">
+                            <img 
+                              src={listing.product.images && listing.product.images[0] ? listing.product.images[0].url : '/product-images/default.webp'} 
+                              alt={listing.product.name} 
+                              className="w-20 h-20 object-contain rounded-lg border border-gray-200" 
+                            />
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-start justify-between mb-2">
+                                <div className="flex-1">
+                                  <h5 className="font-semibold text-gray-900 text-lg mb-1">{listing.product.name}</h5>
+                                  <p className="text-sm text-gray-600 mb-2">{listing.product.brand || 'No Brand'}</p>
+                                </div>
+                                <div className="flex gap-2">
+                                  <button 
+                                    className="text-blue-600 hover:text-blue-800 p-2 rounded-full hover:bg-blue-50 transition-colors" 
+                                    onClick={() => handleEditListing(listing)}
+                                    title="Edit Price"
+                                  >
+                                    <FaEdit className="w-4 h-4" />
+                                  </button>
+                                  <button 
+                                    className="text-red-600 hover:text-red-800 p-2 rounded-full hover:bg-red-50 transition-colors" 
+                                    onClick={() => handleUnlist(listing._id)} 
+                                    disabled={listingLoading}
+                                    title="Unlist Product"
+                                  >
+                                    <FaTrash className="w-4 h-4" />
+                                  </button>
+                                </div>
+                              </div>
+                              
+                              <div className="space-y-3">
+                                {/* Price Comparison */}
+                                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                                  <div className="text-sm text-gray-600">Admin Price:</div>
+                                  <div className="font-medium text-gray-900">{formatINR(listing.product.price)}</div>
+                                </div>
+                                
+                                <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg border border-blue-200">
+                                  <div className="text-sm text-blue-700 font-medium">Your Price:</div>
+                                  <div className="font-bold text-blue-900 text-lg">{formatINR(listing.sellerPrice)}</div>
+                                </div>
+                                
+                                {/* Price Difference Indicator */}
+                                {priceDifference !== 0 && (
+                                  <div className={`flex items-center justify-between p-2 rounded-lg text-sm font-medium ${
+                                    isHigher 
+                                      ? 'bg-green-50 text-green-700 border border-green-200' 
+                                      : 'bg-orange-50 text-orange-700 border border-orange-200'
+                                  }`}>
+                                    <span>{isHigher ? 'Price Premium:' : 'Price Discount:'}</span>
+                                    <span className={isHigher ? 'text-green-800' : 'text-orange-800'}>
+                                      {isHigher ? '+' : ''}{formatINR(Math.abs(priceDifference))}
+                                    </span>
+                                  </div>
+                                )}
+                                
+                                {/* Listing Status */}
+                                <div className="flex items-center justify-between">
+                                  <span className="text-xs text-gray-500">Listed on:</span>
+                                  <span className="text-xs text-gray-600">
+                                    {new Date(listing.createdAt).toLocaleDateString()}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             </div>
           )}
