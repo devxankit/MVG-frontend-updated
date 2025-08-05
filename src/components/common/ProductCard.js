@@ -16,8 +16,10 @@ const ProductCard = ({
   const navigate = useNavigate();
   const [isHovered, setIsHovered] = useState(false);
 
-  const discountPercentage = product.comparePrice && product.comparePrice > product.price 
-    ? Math.round(((product.comparePrice - product.price) / product.comparePrice) * 100)
+  // Use seller price if available, otherwise use product price
+  const displayPrice = product?.sellerPrice ?? product.price;
+  const discountPercentage = product.comparePrice && product.comparePrice > displayPrice 
+    ? Math.round(((product.comparePrice - displayPrice) / product.comparePrice) * 100)
     : 0;
 
   return (
@@ -81,9 +83,9 @@ const ProductCard = ({
             {showPrice && (
               <div className="flex items-center gap-2">
                 <span className="text-white font-bold text-base">
-                  ₹{product.price}
+                  ₹{displayPrice}
                 </span>
-                {product.comparePrice && product.comparePrice > product.price && (
+                {product.comparePrice && product.comparePrice > displayPrice && (
                   <span className="text-gray-300 text-xs line-through">
                     ₹{product.comparePrice}
                   </span>

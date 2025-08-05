@@ -67,10 +67,10 @@ const Checkout = () => {
       return;
     }
 
-    // Check for products without sellers
-    const productsWithoutSellers = cartItems.filter(item => !item.product?.seller?._id);
-    if (productsWithoutSellers.length > 0) {
-      const productNames = productsWithoutSellers.map(item => item.product.name).join(', ');
+    // Check for products without seller information
+    const productsWithoutSellerInfo = cartItems.filter(item => !item.seller || !item.sellerProduct);
+    if (productsWithoutSellerInfo.length > 0) {
+      const productNames = productsWithoutSellerInfo.map(item => item.product?.name || 'Unknown Product').join(', ');
       toast.error(`Some products in your cart are not available for purchase: ${productNames}. Please remove them to continue.`);
       return;
     }
@@ -105,8 +105,9 @@ const Checkout = () => {
       console.log(`Item ${index + 1}:`, {
         productName: item.product?.name,
         productId: item.product?._id,
-        seller: item.product?.seller,
-        sellerId: item.product?.seller?._id,
+        seller: item.seller,
+        sellerId: item.seller?._id,
+        sellerProduct: item.sellerProduct,
         quantity: item.quantity
       });
     });
@@ -126,7 +127,8 @@ const Checkout = () => {
       items: cartItems.map(item => ({
         product: item.product._id,
         quantity: item.quantity,
-        seller: typeof item.product.seller === 'object' ? item.product.seller._id : item.product.seller,
+        seller: typeof item.seller === 'object' ? item.seller._id : item.seller,
+        sellerProduct: typeof item.sellerProduct === 'object' ? item.sellerProduct._id : item.sellerProduct,
       })),
       paymentMethod: paymentMethod === 'cod' ? 'cod' : paymentMethod,
       cardData: paymentMethod === 'credit-card' ? cardData : undefined,
@@ -355,7 +357,7 @@ const Checkout = () => {
                     <p className="font-medium text-gray-800">{item.product.name}</p>
                     <p className="text-sm text-gray-600">Qty: {item.quantity}</p>
                   </div>
-                  <span className="font-medium">{formatINR(item.product.price * item.quantity)}</span>
+                  <span className="font-medium">{formatINR((item?.sellerProduct?.sellerPrice ?? item.product.price) * item.quantity)}</span>
                 </div>
               ))}
             </div>

@@ -36,7 +36,13 @@ const Home = () => {
 
   useEffect(() => {
     dispatch(fetchFeaturedProducts());
-    dispatch(fetchProducts());
+    // Use the new API with seller information
+    productAPI.getProductsWithSellerInfo().then(res => {
+      // Update the products in the store
+      dispatch({ type: 'products/fetchProducts/fulfilled', payload: res.data });
+    }).catch(() => {
+      dispatch({ type: 'products/fetchProducts/rejected', payload: 'Failed to fetch products' });
+    });
     productAPI.getCategories().then(res => setCategories(res.data)).catch(() => setCategories([]));
   }, [dispatch]);
 

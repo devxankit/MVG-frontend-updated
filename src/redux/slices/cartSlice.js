@@ -18,9 +18,11 @@ export const addToCartAsync = createAsyncThunk(
   'cart/addToCart',
   async (payload, { rejectWithValue }) => {
     try {
-      // Handle both old format (product, quantity) and new format (product, quantity, selectedVariants)
+      // Handle new format with seller information
       const cartPayload = {
         product: payload.product,
+        seller: payload.seller,
+        sellerProduct: payload.sellerProduct,
         quantity: payload.quantity,
         selectedVariants: payload.selectedVariants || {}
       };
@@ -104,7 +106,11 @@ const cartSlice = createSlice({
         // Filter out invalid/empty items
         state.items = (action.payload || []).filter(item => item && item.product && item.quantity > 0);
         state.itemCount = state.items.reduce((total, item) => total + (item?.quantity ?? 0), 0);
-        state.total = state.items.reduce((total, item) => total + ((item?.product?.price ?? 0) * (item?.quantity ?? 0)), 0);
+        state.total = state.items.reduce((total, item) => {
+          // Use seller price if available, otherwise use product price
+          const price = item?.sellerProduct?.sellerPrice ?? item?.product?.price ?? 0;
+          return total + (price * (item?.quantity ?? 0));
+        }, 0);
       })
       .addCase(fetchCart.rejected, (state, action) => {
         state.loading = false;
@@ -118,7 +124,11 @@ const cartSlice = createSlice({
         state.loading = false;
         state.items = (action.payload || []).filter(item => item && item.product && item.quantity > 0);
         state.itemCount = state.items.reduce((total, item) => total + (item?.quantity ?? 0), 0);
-        state.total = state.items.reduce((total, item) => total + ((item?.product?.price ?? 0) * (item?.quantity ?? 0)), 0);
+        state.total = state.items.reduce((total, item) => {
+          // Use seller price if available, otherwise use product price
+          const price = item?.sellerProduct?.sellerPrice ?? item?.product?.price ?? 0;
+          return total + (price * (item?.quantity ?? 0));
+        }, 0);
       })
       .addCase(addToCartAsync.rejected, (state, action) => {
         state.loading = false;
@@ -132,7 +142,11 @@ const cartSlice = createSlice({
         state.loading = false;
         state.items = (action.payload || []).filter(item => item && item.product && item.quantity > 0);
         state.itemCount = state.items.reduce((total, item) => total + (item?.quantity ?? 0), 0);
-        state.total = state.items.reduce((total, item) => total + ((item?.product?.price ?? 0) * (item?.quantity ?? 0)), 0);
+        state.total = state.items.reduce((total, item) => {
+          // Use seller price if available, otherwise use product price
+          const price = item?.sellerProduct?.sellerPrice ?? item?.product?.price ?? 0;
+          return total + (price * (item?.quantity ?? 0));
+        }, 0);
       })
       .addCase(removeFromCartAsync.rejected, (state, action) => {
         state.loading = false;
@@ -146,7 +160,11 @@ const cartSlice = createSlice({
         state.loading = false;
         state.items = (action.payload || []).filter(item => item && item.product && item.quantity > 0);
         state.itemCount = state.items.reduce((total, item) => total + (item?.quantity ?? 0), 0);
-        state.total = state.items.reduce((total, item) => total + ((item?.product?.price ?? 0) * (item?.quantity ?? 0)), 0);
+        state.total = state.items.reduce((total, item) => {
+          // Use seller price if available, otherwise use product price
+          const price = item?.sellerProduct?.sellerPrice ?? item?.product?.price ?? 0;
+          return total + (price * (item?.quantity ?? 0));
+        }, 0);
       })
       .addCase(updateCartQuantityAsync.rejected, (state, action) => {
         state.loading = false;

@@ -6,9 +6,19 @@ const productAPI = {
     return axiosInstance.get('/products', { params });
   },
 
+  // Get all products with seller information
+  getProductsWithSellerInfo: (params = {}) => {
+    return axiosInstance.get('/products/with-seller-info', { params });
+  },
+
   // Get product by ID
   getProductById: (id) => {
     return axiosInstance.get(`/products/${id}`);
+  },
+
+  // Get product by ID with seller information
+  getProductWithSellerInfo: (id) => {
+    return axiosInstance.get(`/products/${id}/with-seller-info`);
   },
 
   // Search products

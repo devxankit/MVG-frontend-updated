@@ -20,10 +20,10 @@ const ProductDetailPage = () => {
   const isAuthenticated = useSelector(state => state.auth.isAuthenticated);
   const navigate = useNavigate();
 
-  // Mock data - replace with actual API call
+  // Fetch product with seller information
   useEffect(() => {
     setLoading(true);
-    productAPI.getProductById(id)
+    productAPI.getProductWithSellerInfo(id)
       .then(res => {
         setProduct(res.data);
         setLoading(false);
@@ -43,7 +43,19 @@ const ProductDetailPage = () => {
       return;
     }
     if (!product || !product._id) return;
-    dispatch(addToCartAsync({ product: product._id, quantity }));
+    
+    // Check if product has seller information
+    if (!product.seller || !product.sellerProductId) {
+      alert('This product is not available for purchase. Please contact the seller.');
+      return;
+    }
+    
+    dispatch(addToCartAsync({ 
+      product: product._id, 
+      seller: product.seller._id,
+      sellerProduct: product.sellerProductId,
+      quantity 
+    }));
     dispatch(fetchCart());
   };
 

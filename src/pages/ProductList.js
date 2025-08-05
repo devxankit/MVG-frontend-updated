@@ -83,20 +83,20 @@ const ProductList = () => {
   useEffect(() => {
     setLoading(true);
     const fetch = category && category !== 'all'
-      ? productAPI.getAllSellerListings().then(res => res.data.filter(listing => {
+      ? productAPI.getProductsWithSellerInfo().then(res => res.data.filter(product => {
           return (
-            String(listing.product.category) === String(category) ||
-            (listing.product.subCategory && String(listing.product.subCategory) === String(category))
+            String(product.category?._id || product.category) === String(category) ||
+            (product.subCategory && String(product.subCategory?._id || product.subCategory) === String(category))
           );
         }))
-      : productAPI.getAllSellerListings().then(res => res.data);
+      : productAPI.getProductsWithSellerInfo().then(res => res.data);
     Promise.resolve(fetch).then(data => {
       setProducts(data);
       setLoading(false);
-      console.log('Fetched seller listings from API:', data);
+      console.log('Fetched products with seller info from API:', data);
     }).catch((err) => {
       setLoading(false);
-      console.error('Error fetching seller listings:', err);
+      console.error('Error fetching products with seller info:', err);
     });
   }, [category]);
 
@@ -142,8 +142,20 @@ const ProductList = () => {
       navigate('/login');
       return;
     }
+    
+    // Check if product has seller information
+    if (!product.seller || !product.sellerProductId) {
+      toast.error('This product is not available for purchase. Please contact the seller.');
+      return;
+    }
+    
     console.log('Dispatching addToCartAsync:', addToCartAsync, product);
-    dispatch(addToCartAsync({ product: product._id, quantity: 1 }));
+    dispatch(addToCartAsync({ 
+      product: product._id, 
+      seller: product.seller._id,
+      sellerProduct: product.sellerProductId,
+      quantity: 1 
+    }));
   };
 
   // Wishlist handler

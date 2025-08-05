@@ -30,8 +30,11 @@ const Cart = () => {
   const availableItems = cartItems.filter(item => item.product && item.product.stock > 0);
   const unavailableItems = cartItems.filter(item => item.product && item.product.stock <= 0);
 
-  // Add null checks for price calculations
-  const subtotal = availableItems.reduce((sum, item) => sum + ((item.product?.price ?? 0) * (item.quantity ?? 0)), 0);
+  // Add null checks for price calculations - use seller price if available
+  const subtotal = availableItems.reduce((sum, item) => {
+    const price = item?.sellerProduct?.sellerPrice ?? item?.product?.price ?? 0;
+    return sum + (price * (item.quantity ?? 0));
+  }, 0);
   const shipping = subtotal > 100 ? 0 : 9.99;
   const tax = subtotal * 0.08; // 8% tax
   const total = subtotal + shipping + tax;
@@ -90,7 +93,7 @@ const Cart = () => {
                       <div className="flex-1 min-w-0">
                         <h3 className="font-semibold text-gray-800 text-sm sm:text-base truncate">{item.product?.name || 'Unnamed Product'}</h3>
                         <p className="text-blue-600 font-bold text-sm sm:text-base">
-                          {formatINR(item.product?.price ?? 0)}
+                          {formatINR(item?.sellerProduct?.sellerPrice ?? item.product?.price ?? 0)}
                         </p>
                         <div className="text-xs sm:text-sm text-green-600">In Stock</div>
                       </div>
@@ -111,7 +114,7 @@ const Cart = () => {
                       </div>
                       <div className="flex flex-row sm:flex-col items-center sm:items-end gap-2 sm:gap-0 mt-2 sm:mt-0">
                         <p className="font-bold text-gray-800 text-sm sm:text-base">
-                          {formatINR((item.product?.price ?? 0) * (item.quantity ?? 0))}
+                          {formatINR((item?.sellerProduct?.sellerPrice ?? item.product?.price ?? 0) * (item.quantity ?? 0))}
                         </p>
                         <button
                           onClick={() => removeItem(item.product?._id)}
@@ -142,13 +145,13 @@ const Cart = () => {
                       <div className="flex-1">
                         <h3 className="font-semibold text-gray-800">{item.product?.name || 'Unnamed Product'}</h3>
                         <p className="text-blue-600 font-bold">
-                          {formatINR(item.product?.price ?? 0)}
+                          {formatINR(item?.sellerProduct?.sellerPrice ?? item.product?.price ?? 0)}
                         </p>
                         <div className="text-sm text-red-600">Out of Stock</div>
                       </div>
                       <div className="text-right">
                         <p className="font-bold text-gray-800">
-                          {formatINR((item.product?.price ?? 0) * (item.quantity ?? 0))}
+                          {formatINR((item?.sellerProduct?.sellerPrice ?? item.product?.price ?? 0) * (item.quantity ?? 0))}
                         </p>
                         <button
                           onClick={() => removeItem(item.product?._id)}
