@@ -272,3 +272,62 @@ code {
 .image-zoom:hover img {
   transform: scale(1.1);
 }
+
+/* Features Carousel Styles */
+.features-swiper {
+  padding-bottom: 40px !important;
+  overflow: hidden !important;
+  width: 100% !important;
+}
+
+.features-swiper .swiper-wrapper {
+  align-items: stretch;
+}
+
+.features-swiper .swiper-slide {
+  width: 100% !important;
+  height: auto;
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+}
+
+.features-swiper .swiper-slide > div {
+  width: 100%;
+  max-width: 280px;
+  height: auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  min-height: 140px;
+}
+
+.features-swiper .swiper-pagination {
+  bottom: 0 !important;
+}
+
+.features-swiper .swiper-pagination-bullet {
+  background: #d1d5db;
+  opacity: 0.5;
+  transition: all 0.3s ease;
+  width: 8px;
+  height: 8px;
+}
+
+.features-swiper .swiper-pagination-bullet-active {
+  background: #3b82f6;
+  opacity: 1;
+  transform: scale(1.2);
+}
+
+.features-swiper .swiper-slide-active > div {
+  transform: scale(1.02);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+}
+
+.features-swiper .swiper-slide-prev > div,
+.features-swiper .swiper-slide-next > div {
+  transform: scale(0.98);
+  opacity: 0.8;
+}

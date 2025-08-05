@@ -1,6 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector, useStore } from 'react-redux';
 import { Link } from 'react-router-dom';
+import { Swiper, SwiperSlide } from 'swiper/react';
+import { Pagination } from 'swiper';
+import 'swiper/css';
+import 'swiper/css/pagination';
+
 import { 
   FaArrowRight, 
   FaStar, 
@@ -100,11 +105,7 @@ const Home = () => {
   // Filter only main categories (no parentCategory)
   const mainCategories = categories.filter(cat => !cat.parentCategory).slice(0, 6);
 
-  // Debug: log main category names
-  // console.log('Main categories:', mainCategories.map(cat => cat.name));
-  // if (mainCategories.length) {
-  //   mainCategories.forEach(cat => console.log('Category name:', cat.name));
-  // }
+ 
 
   // Fetch discover and recommended products from backend
   const [discoverProducts, setDiscoverProducts] = useState([]);
@@ -119,26 +120,6 @@ const Home = () => {
       {/* Hero Section */}
       <HeroCarousel />
 
-      {/* Features Section */}
-      <section className="py-16 bg-gradient-to-br from-gray-50 to-gray-100">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">Why Choose Us</h2>
-            <p className="text-lg text-gray-600">Experience the best shopping with our premium services</p>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {features.map((feature, index) => (
-              <div key={index} className="bg-white rounded-xl p-6 shadow-lg hover:shadow-xl transform hover:-translate-y-2 transition-all duration-300 text-center group">
-                <div className="text-green-500 mb-4 flex justify-center group-hover:scale-110 transition-transform duration-300">
-                  {feature.icon}
-                </div>
-                <h3 className="text-lg font-semibold mb-2 text-gray-900">{feature.title}</h3>
-                <p className="text-gray-600">{feature.description}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
 
       {/* Categories Section */}
       <section className="py-16">
@@ -161,6 +142,54 @@ const Home = () => {
             >
               View All Categories <FaArrowRight className="ml-2" />
             </Link>
+          </div>
+        </div>
+      </section>
+
+        {/* Features Section */}
+      <section className="py-0 bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Desktop Grid Layout */}
+          <div className="hidden md:grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+            {features.map((feature, index) => (
+              <div key={index} className="text-center">
+                <div className="text-primary-600 mb-4 flex justify-center">
+                  {feature.icon}
+                </div>
+                <h3 className="text-lg font-semibold mb-2">{feature.title}</h3>
+                <p className="text-gray-600">{feature.description}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* Mobile Carousel Layout */}
+          <div className="md:hidden ">
+            <Swiper
+              modules={[Pagination]}
+              spaceBetween={12}
+              slidesPerView={1}
+              centeredSlides={true}
+              pagination={{
+                clickable: true,
+                dynamicBullets: true,
+              }}
+              loop={true}
+              className="features-swiper"
+            >
+              {features.map((feature, index) => (
+                <SwiperSlide key={index}>
+                  <div className="text-center bg-white rounded-xl p-2 shadow-lg border border-gray-200 mx-2">
+                    <div className="text-primary-600 mb-3 flex justify-center">
+                      <div className="text-2xl">
+                        {feature.icon}
+                      </div>
+                    </div>
+                    <h3 className="text-base font-bold mb-2 text-gray-800">{feature.title}</h3>
+                    <p className="text-gray-600 text-xs leading-relaxed">{feature.description}</p>
+                  </div>
+                </SwiperSlide>
+              ))}
+            </Swiper>
           </div>
         </div>
       </section>

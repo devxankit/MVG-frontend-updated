@@ -19,7 +19,8 @@ const Checkout = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { items: cartItems, total, loading: cartLoading } = useSelector((state) => state.cart);
-  const { user } = useSelector((state) => state.auth); // Assuming user info is in auth slice
+  const { user } = useSelector((state) => state.auth);
+  const { loading: orderLoading } = useSelector((state) => state.orders);
   const [formData, setFormData] = useState({
     firstName: user?.firstName || '',
     lastName: user?.lastName || '',
@@ -59,7 +60,57 @@ const Checkout = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (cartItems.length === 0) return;
+    
+    // Validate cart
+    if (cartItems.length === 0) {
+      toast.error('Your cart is empty');
+      return;
+    }
+
+    // Check for products without sellers
+    const productsWithoutSellers = cartItems.filter(item => !item.product?.seller?._id);
+    if (productsWithoutSellers.length > 0) {
+      const productNames = productsWithoutSellers.map(item => item.product.name).join(', ');
+      toast.error(`Some products in your cart are not available for purchase: ${productNames}. Please remove them to continue.`);
+      return;
+    }
+
+    // Validate form data
+    if (!formData.firstName || !formData.lastName || !formData.email || !formData.phone || 
+        !formData.address || !formData.city || !formData.state || !formData.pincode) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+
+    // Validate payment method
+    if (!paymentMethod) {
+      toast.error('Please select a payment method');
+      return;
+    }
+
+    // Validate card data for credit card payments
+    if (paymentMethod === 'credit-card') {
+      if (!cardData.cardholderName || !cardData.cardNumber || !cardData.expiryDate || !cardData.cvv) {
+        toast.error('Please fill in all card details');
+        return;
+      }
+    }
+
+    // Debug cart items
+    console.log('Cart items:', cartItems);
+    console.log('Cart total:', total);
+    
+    // Debug seller information
+    cartItems.forEach((item, index) => {
+      console.log(`Item ${index + 1}:`, {
+        productName: item.product?.name,
+        productId: item.product?._id,
+        seller: item.product?.seller,
+        sellerId: item.product?.seller?._id,
+        quantity: item.quantity
+      });
+    });
+    
     const orderData = {
       shippingAddress: {
         type: 'home',
@@ -69,29 +120,37 @@ const Checkout = () => {
         zipCode: formData.pincode,
         country: formData.country,
         phone: formData.phone,
+        firstName: formData.firstName,
+        lastName: formData.lastName,
       },
       items: cartItems.map(item => ({
         product: item.product._id,
         quantity: item.quantity,
-        seller: typeof item.product.seller === 'object' ? item.product.seller._id : item.product.seller, // ensure ObjectId
+        seller: typeof item.product.seller === 'object' ? item.product.seller._id : item.product.seller,
       })),
-      paymentMethod,
+      paymentMethod: paymentMethod === 'cod' ? 'cod' : paymentMethod,
       cardData: paymentMethod === 'credit-card' ? cardData : undefined,
       coupon: appliedCoupon,
       discount,
       total: total - discount,
     };
+
+    console.log('Submitting order with data:', orderData);
+
     try {
       const result = await dispatch(createOrder(orderData));
-      if (!result.error) {
+      console.log('Order creation result:', result);
+      
+      if (result.meta.requestStatus === 'fulfilled') {
         dispatch(clearCart());
         toast.success('Order placed successfully!');
-        navigate('/profile'); // or to an order confirmation page
-      } else {
-        toast.error(result.error || 'Failed to place order');
+        navigate('/profile');
+      } else if (result.meta.requestStatus === 'rejected') {
+        toast.error(result.payload || 'Failed to place order');
       }
     } catch (err) {
-      toast.error('Failed to place order');
+      console.error('Order creation error:', err);
+      toast.error('Failed to place order. Please try again.');
     }
   };
 
@@ -196,10 +255,17 @@ const Checkout = () => {
                   <FaGooglePay className="text-green-600 mr-3" />
                   <span className="font-medium">Google Pay</span>
                 </label>
-                <label className="flex items-center p-4 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50">
+                <label className={`flex items-center p-4 border rounded-lg cursor-pointer transition-colors ${
+                  paymentMethod === 'cod' 
+                    ? 'border-green-500 bg-green-50' 
+                    : 'border-gray-300 hover:bg-gray-50'
+                }`}>
                   <input type="radio" name="paymentMethod" value="cod" checked={paymentMethod === 'cod'} onChange={e => setPaymentMethod(e.target.value)} className="mr-3" />
                   <FaMoneyBillWave className="text-green-600 mr-3" />
-                  <span className="font-medium">Cash on Delivery</span>
+                  <div>
+                    <span className="font-medium">Cash on Delivery</span>
+                    <p className="text-sm text-gray-600 mt-1">Pay when you receive your order</p>
+                  </div>
                 </label>
               </div>
               {/* Credit Card Form */}
@@ -225,11 +291,46 @@ const Checkout = () => {
                   </div>
                 </div>
               )}
+              
+              {/* COD Notice */}
+              {paymentMethod === 'cod' && (
+                <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                  <div className="flex items-start">
+                    <div className="flex-shrink-0">
+                      <FaMoneyBillWave className="h-5 w-5 text-blue-600" />
+                    </div>
+                    <div className="ml-3">
+                      <h3 className="text-sm font-medium text-blue-800">Cash on Delivery</h3>
+                      <div className="mt-2 text-sm text-blue-700">
+                        <p>• Pay with cash when your order is delivered</p>
+                        <p>• No additional charges for COD</p>
+                        <p>• Please have exact change ready</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
             {/* Place Order Button */}
-            <button type="submit" className="w-full bg-blue-600 text-white py-3 px-6 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2">
-              <FaLock />
-              Place Order
+            <button 
+              type="submit" 
+              disabled={cartLoading || orderLoading}
+              className="w-full bg-blue-600 text-white py-3 px-6 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+            >
+              {cartLoading || orderLoading ? (
+                <>
+                  <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Processing...
+                </>
+              ) : (
+                <>
+                  <FaLock />
+                  {paymentMethod === 'cod' ? 'Place Order (Cash on Delivery)' : 'Place Order'}
+                </>
+              )}
             </button>
           </form>
         </div>

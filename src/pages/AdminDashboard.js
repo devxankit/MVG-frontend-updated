@@ -1081,43 +1081,106 @@ const [imageUploadProgress, setImageUploadProgress] = useState(0);
           {/* Orders Tab */}
           {activeTab === 'orders' && (
             <div>
-              <h3 className="text-lg font-semibold text-gray-800 mb-6">Order Management</h3>
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b border-gray-200">
-                      <th className="text-left py-3 px-4 font-medium text-gray-700">Order #</th>
-                      <th className="text-left py-3 px-4 font-medium text-gray-700">Customer</th>
-                      <th className="text-left py-3 px-4 font-medium text-gray-700">Seller</th>
-                      <th className="text-left py-3 px-4 font-medium text-gray-700">Date</th>
-                      <th className="text-left py-3 px-4 font-medium text-gray-700">Items</th>
-                      <th className="text-left py-3 px-4 font-medium text-gray-700">Total</th>
-                      <th className="text-left py-3 px-4 font-medium text-gray-700">Status</th>
-                      <th className="text-left py-3 px-4 font-medium text-gray-700">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {(Array.isArray(orders) ? orders : []).map((order) => (
-                      <tr key={order._id} className="border-b border-gray-100 hover:bg-gray-50">
-                        <td className="py-3 px-4 font-medium text-blue-600">{order.orderNumber || order._id}</td>
-                        <td className="py-3 px-4">{order.user?.name} <span className="text-xs text-gray-500">{order.user?.email}</span></td>
-                        <td className="py-3 px-4">{order.seller?.shopName || 'N/A'}</td>
-                        <td className="py-3 px-4 text-gray-600">{new Date(order.createdAt).toLocaleDateString()}</td>
-                        <td className="py-3 px-4">{order.orderItems?.map(item => `${item.product?.name || item.name} (x${item.quantity})`).join(', ')}</td>
-                        <td className="py-3 px-4 font-medium">{formatINR(order.totalPrice)}</td>
-                        <td className="py-3 px-4">
-                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(order.orderStatus)}`}>{order.orderStatus}</span>
-                        </td>
-                        <td className="py-3 px-4">
-                          <div className="flex space-x-2">
-                            <button className="text-blue-600 hover:text-blue-800" onClick={() => handleViewOrder(order)}><FaEye /></button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-lg font-semibold text-gray-800">Order Management</h3>
+                <div className="flex items-center gap-4">
+                  <div className="text-sm text-gray-600">
+                    Total Orders: {Array.isArray(orders) ? orders.length : 0}
+                  </div>
+                  <button
+                    onClick={() => {
+                      // Refresh orders
+                      axiosInstance.get('/admin/orders')
+                        .then(res => setOrders(res.data))
+                        .catch(() => setOrders([]));
+                    }}
+                    className="bg-blue-600 text-white px-3 py-1 rounded-lg hover:bg-blue-700 text-sm"
+                  >
+                    Refresh
+                  </button>
+                </div>
               </div>
+              
+              {!Array.isArray(orders) || orders.length === 0 ? (
+                <div className="text-center py-12 bg-gray-50 rounded-lg">
+                  <div className="text-gray-400 mb-2">No orders found</div>
+                  <div className="text-sm text-gray-500">Orders will appear here when customers place them</div>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full bg-white rounded-lg shadow-sm">
+                    <thead>
+                      <tr className="border-b border-gray-200 bg-gray-50">
+                        <th className="text-left py-3 px-4 font-medium text-gray-700">Order #</th>
+                        <th className="text-left py-3 px-4 font-medium text-gray-700">Customer</th>
+                        <th className="text-left py-3 px-4 font-medium text-gray-700">Seller</th>
+                        <th className="text-left py-3 px-4 font-medium text-gray-700">Date</th>
+                        <th className="text-left py-3 px-4 font-medium text-gray-700">Items</th>
+                        <th className="text-left py-3 px-4 font-medium text-gray-700">Total</th>
+                        <th className="text-left py-3 px-4 font-medium text-gray-700">Status</th>
+                        <th className="text-left py-3 px-4 font-medium text-gray-700">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {orders.map((order) => (
+                        <tr key={order._id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                          <td className="py-3 px-4 font-medium text-blue-600">
+                            #{order.orderNumber || order._id.slice(-8)}
+                          </td>
+                          <td className="py-3 px-4">
+                            <div>
+                              <div className="font-medium text-gray-900">
+                                {order.user?.firstName} {order.user?.lastName}
+                              </div>
+                              <div className="text-sm text-gray-500">{order.user?.email}</div>
+                            </div>
+                          </td>
+                          <td className="py-3 px-4">
+                            <div className="text-sm text-gray-900">{order.seller?.shopName || 'N/A'}</div>
+                          </td>
+                          <td className="py-3 px-4 text-gray-600">
+                            <div className="text-sm">
+                              {new Date(order.createdAt).toLocaleDateString()}
+                            </div>
+                            <div className="text-xs text-gray-400">
+                              {new Date(order.createdAt).toLocaleTimeString()}
+                            </div>
+                          </td>
+                          <td className="py-3 px-4">
+                            <div className="text-sm">
+                              {order.orderItems?.slice(0, 2).map(item => 
+                                `${item.product?.name || item.name} (x${item.quantity})`
+                              ).join(', ')}
+                              {order.orderItems?.length > 2 && (
+                                <span className="text-gray-500"> +{order.orderItems.length - 2} more</span>
+                              )}
+                            </div>
+                          </td>
+                          <td className="py-3 px-4 font-medium text-gray-900">
+                            {formatINR(order.totalPrice || order.total)}
+                          </td>
+                          <td className="py-3 px-4">
+                            <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(order.orderStatus)}`}>
+                              {order.orderStatus}
+                            </span>
+                          </td>
+                          <td className="py-3 px-4">
+                            <div className="flex space-x-2">
+                              <button 
+                                className="text-blue-600 hover:text-blue-800 p-2 rounded-full hover:bg-blue-50 transition-colors" 
+                                onClick={() => handleViewOrder(order)}
+                                title="View Details"
+                              >
+                                <FaEye className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
               {/* Order Details Modal */}
               {showOrderModal && selectedOrder && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
