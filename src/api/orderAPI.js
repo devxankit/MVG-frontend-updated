@@ -6,6 +6,26 @@ const orderAPI = {
     return axiosInstance.post('/orders', orderData);
   },
 
+  // Razorpay - get public key
+  getRazorpayKey: () => {
+    return axiosInstance.get('/orders/payments/razorpay/key');
+  },
+
+  // Razorpay - create payment order
+  createRazorpayOrder: (payload) => {
+    return axiosInstance.post('/orders/payments/razorpay/order', payload);
+  },
+
+  // Razorpay - verify signature
+  verifyRazorpayPayment: (payload) => {
+    return axiosInstance.post('/orders/payments/razorpay/verify', payload);
+  },
+
+  // Razorpay - capture and attach to orders
+  captureRazorpayPayment: (payload) => {
+    return axiosInstance.post('/orders/payments/razorpay/capture', payload);
+  },
+
   // Get user orders
   getOrders: (params = {}) => {
     return axiosInstance.get('/orders', { params });

@@ -6,6 +6,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { createOrder } from '../redux/slices/orderSlice';
 import { fetchCart, clearCart } from '../redux/slices/cartSlice';
 import { toast } from 'react-toastify';
+import orderAPI from '../api/orderAPI';
 
 const INDIAN_STATES = [
   'Andhra Pradesh', 'Arunachal Pradesh', 'Assam', 'Bihar', 'Chhattisgarh', 'Goa', 'Gujarat', 'Haryana',
@@ -32,7 +33,7 @@ const Checkout = () => {
     pincode: user?.pincode || '',
     country: 'India',
   });
-  const [paymentMethod, setPaymentMethod] = useState('credit-card');
+  const [paymentMethod, setPaymentMethod] = useState('razorpay');
   const [cardData, setCardData] = useState({
     cardNumber: '',
     expiryDate: '',
@@ -56,6 +57,17 @@ const Checkout = () => {
   const handleCardInputChange = (e) => {
     const { name, value } = e.target;
     setCardData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const loadRazorpayScript = () => {
+    return new Promise((resolve) => {
+      if (window.Razorpay) return resolve(true);
+      const script = document.createElement('script');
+      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      script.onload = () => resolve(true);
+      script.onerror = () => resolve(false);
+      document.body.appendChild(script);
+    });
   };
 
   const handleSubmit = async (e) => {
@@ -140,9 +152,84 @@ const Checkout = () => {
     console.log('Submitting order with data:', orderData);
 
     try {
+      if (paymentMethod === 'razorpay') {
+        // 1) Create orders in backend (pending payment)
+        const createRes = await orderAPI.createOrder(orderData);
+        const created = createRes.data?.orders || [];
+        if (!created.length) {
+          toast.error('Failed to create order');
+          return;
+        }
+        const orderIds = created.map(o => o._id);
+
+        // 2) Init Razorpay
+        const keyRes = await orderAPI.getRazorpayKey();
+        const key = keyRes.data?.key;
+        if (!key) {
+          toast.error('Payment configuration error');
+          return;
+        }
+        const amountPaise = Math.round((total - discount) * 100);
+        const rpOrderRes = await orderAPI.createRazorpayOrder({ amount: amountPaise, currency: 'INR', notes: { orderCount: orderIds.length } });
+        const rpOrder = rpOrderRes.data?.order;
+        if (!rpOrder?.id) {
+          toast.error('Failed to initialize payment');
+          return;
+        }
+
+        const loaded = await loadRazorpayScript();
+        if (!loaded) {
+          toast.error('Failed to load payment gateway');
+          return;
+        }
+
+        const options = {
+          key,
+          amount: rpOrder.amount,
+          currency: rpOrder.currency,
+          name: 'MVG Store',
+          description: 'Order Payment',
+          order_id: rpOrder.id,
+          prefill: {
+            name: `${formData.firstName} ${formData.lastName}`,
+            email: formData.email,
+            contact: formData.phone,
+          },
+          notes: { orderIds: orderIds.join(',') },
+          theme: { color: '#16a34a' },
+          handler: async function (response) {
+            try {
+              const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = response;
+              // Verify signature
+              await orderAPI.verifyRazorpayPayment({ razorpay_order_id, razorpay_payment_id, razorpay_signature });
+              // Capture and mark orders paid
+              const captureRes = await orderAPI.captureRazorpayPayment({ orderIds, razorpay_order_id, razorpay_payment_id, razorpay_signature });
+              if (captureRes.data?.success) {
+                dispatch(clearCart());
+                toast.success('Payment successful! Order confirmed.');
+                navigate('/profile');
+              } else {
+                toast.error('Payment capture failed');
+              }
+            } catch (err) {
+              console.error('Payment verification/capture error:', err);
+              toast.error(err.response?.data?.message || 'Payment verification failed');
+            }
+          },
+          modal: {
+            ondismiss: function () {
+              toast.info('Payment cancelled');
+            },
+          },
+        };
+
+        const rzp = new window.Razorpay(options);
+        rzp.open();
+        return; // Do not proceed to default create-order flow
+      }
+
+      // Default flow for non-Razorpay methods
       const result = await dispatch(createOrder(orderData));
-      console.log('Order creation result:', result);
-      
       if (result.meta.requestStatus === 'fulfilled') {
         dispatch(clearCart());
         toast.success('Order placed successfully!');
@@ -237,6 +324,14 @@ const Checkout = () => {
             <div className="bg-white rounded-lg shadow-md p-6">
               <h2 className="text-xl font-semibold text-gray-800 mb-4">Payment Method</h2>
               <div className="space-y-4">
+                <label className={`flex items-center p-4 border rounded-lg cursor-pointer transition-colors ${
+                  paymentMethod === 'razorpay'
+                    ? 'border-green-500 bg-green-50'
+                    : 'border-gray-300 hover:bg-gray-50'
+                }`}>
+                  <input type="radio" name="paymentMethod" value="razorpay" checked={paymentMethod === 'razorpay'} onChange={e => setPaymentMethod(e.target.value)} className="mr-3" />
+                  <span className="font-medium">Razorpay (UPI / Cards / Netbanking)</span>
+                </label>
                 <label className="flex items-center p-4 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50">
                   <input type="radio" name="paymentMethod" value="credit-card" checked={paymentMethod === 'credit-card'} onChange={e => setPaymentMethod(e.target.value)} className="mr-3" />
                   <FaCreditCard className="text-green-600 mr-3" />
