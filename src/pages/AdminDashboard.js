@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { FaUsers, FaBox, FaDollarSign, FaChartLine, FaEdit, FaTrash, FaEye, FaPlus, FaStore, FaCheck, FaTimes, FaImage, FaStar as FaStarFilled, FaRegStar as FaStarOutline, FaCompass, FaRegCompass, FaThumbsUp, FaRegThumbsUp } from 'react-icons/fa';
 import { formatINR } from '../utils/formatCurrency';
 import sellerAPI from '../api/sellerAPI';
@@ -11,6 +11,9 @@ import { toast } from 'react-toastify';
 import AdminWalletOverview from '../components/admin/AdminWalletOverview';
 import AdminWithdrawalManagement from '../components/admin/AdminWithdrawalManagement';
 import AdminSellerEarnings from '../components/admin/AdminSellerEarnings';
+import { LineChart } from '@mui/x-charts/LineChart';
+import { BarChart } from '@mui/x-charts/BarChart';
+import { PieChart } from '@mui/x-charts/PieChart';
 
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState('overview');
@@ -128,6 +131,57 @@ const [imageUploadProgress, setImageUploadProgress] = useState(0);
         pendingVendors: 0
       }));
   }, []);
+
+  // ----- Charts Data (Admin Overview) -----
+  const recentMonths = useMemo(() => {
+    const res = [];
+    const now = new Date();
+    for (let i = 5; i >= 0; i -= 1) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      res.push({
+        key: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`,
+        label: d.toLocaleString(undefined, { month: 'short' }),
+      });
+    }
+    return res;
+  }, []);
+
+  const revenueByMonth = useMemo(() => {
+    // Build from orders array fetched via /admin/orders
+    const buckets = recentMonths.reduce((acc, m) => ({ ...acc, [m.key]: 0 }), {});
+    (orders || []).forEach((o) => {
+      const created = new Date(o.createdAt);
+      const key = `${created.getFullYear()}-${String(created.getMonth() + 1).padStart(2, '0')}`;
+      if (key in buckets) {
+        const total = typeof o.totalPrice === 'number' ? o.totalPrice : (o.total || 0);
+        buckets[key] += total;
+      }
+    });
+    return recentMonths.map((m) => buckets[m.key]);
+  }, [orders, recentMonths]);
+
+  const ordersByStatus = useMemo(() => {
+    const map = {};
+    (orders || []).forEach((o) => {
+      const st = (o.orderStatus || o.status || 'pending').toLowerCase();
+      map[st] = (map[st] || 0) + 1;
+    });
+    return Object.entries(map).map(([label, value], id) => ({ id, label, value }));
+  }, [orders]);
+
+  const topCategories = useMemo(() => {
+    const count = new Map();
+    (orders || []).forEach((o) => {
+      (o.orderItems || []).forEach((it) => {
+        const cat = it.product?.category?.name || it.product?.category || 'Other';
+        count.set(cat, (count.get(cat) || 0) + (Number(it.quantity) || 0));
+      });
+    });
+    const list = [...count.entries()].map(([name, qty]) => ({ name, qty }));
+    list.sort((a, b) => b.qty - a.qty);
+    const top = list.slice(0, 5);
+    return { labels: top.map((t) => t.name), data: top.map((t) => t.qty) };
+  }, [orders]);
 
   useEffect(() => {
     const fetchVendors = async () => {
@@ -713,8 +767,9 @@ const [imageUploadProgress, setImageUploadProgress] = useState(0);
                     {(Array.isArray(vendors) ? vendors : []).slice(0, 3).map((vendor) => (
                       <div key={vendor._id} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
                         <div>
-                          <p className="font-medium text-gray-800">{vendor.shopName}</p>
-                          <p className="text-sm text-gray-600">{vendor.userId?.name || '-'}</p>
+                          <p className="font-medium text-gray-800">{vendor.businessName}</p>
+                          <p className="text-sm text-gray-600">{vendor.userId?.firstName} {vendor.userId?.lastName}</p>
+                          <p className="text-xs text-gray-500">{vendor.email}</p>
                         </div>
                         <div className="text-right">
                           <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(vendor.isApproved ? 'approved' : vendor.rejectionReason ? 'rejected' : 'pending')}`}>
@@ -730,16 +785,16 @@ const [imageUploadProgress, setImageUploadProgress] = useState(0);
                 <div>
                   <h3 className="text-lg font-semibold text-gray-800 mb-4">Recent Orders</h3>
                   <div className="space-y-3">
-                    {(Array.isArray(orders) ? orders : []).map((order) => (
-                      <div key={order.id} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
+                    {(Array.isArray(orders) ? orders : []).slice(0, 3).map((order) => (
+                      <div key={order._id} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
                         <div>
-                          <p className="font-medium text-gray-800">{order.id}</p>
-                          <p className="text-sm text-gray-600">{order.customer}</p>
+                          <p className="font-medium text-gray-800">#{order.orderNumber || String(order._id).slice(-8)}</p>
+                          <p className="text-sm text-gray-600">{order.user?.firstName} {order.user?.lastName}</p>
                         </div>
                         <div className="text-right">
-                          <p className="font-bold text-blue-600">${order.total}</p>
-                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(order.status)}`}>
-                            {order.status}
+                          <p className="font-bold text-blue-600">{formatINR(order.totalPrice || order.total || 0)}</p>
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(order.orderStatus)}`}>
+                            {order.orderStatus}
                           </span>
                         </div>
                       </div>
@@ -748,10 +803,37 @@ const [imageUploadProgress, setImageUploadProgress] = useState(0);
                 </div>
               </div>
 
-              <div>
-                <h3 className="text-lg font-semibold text-gray-800 mb-4">Platform Analytics</h3>
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <p className="text-gray-600">Analytics dashboard coming soon...</p>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="bg-white rounded-lg shadow-md p-4">
+                  <h3 className="text-lg font-semibold text-gray-800 mb-4">Revenue (Last 6 months)</h3>
+                  <div className="w-full overflow-x-auto">
+                    <LineChart
+                      height={260}
+                      series={[{ data: revenueByMonth, label: 'Revenue' }]}
+                      xAxis={[{ scaleType: 'point', data: recentMonths.map((m) => m.label) }]}
+                    />
+                  </div>
+                </div>
+                <div className="bg-white rounded-lg shadow-md p-4">
+                  <h3 className="text-lg font-semibold text-gray-800 mb-4">Orders by Status</h3>
+                  <div className="w-full flex justify-center">
+                    <PieChart
+                      height={260}
+                      series={[{ data: ordersByStatus, innerRadius: 40 }]}
+                      slotProps={{ legend: { hidden: false } }}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white rounded-lg shadow-md p-4">
+                <h3 className="text-lg font-semibold text-gray-800 mb-4">Top Categories (Units)</h3>
+                <div className="w-full overflow-x-auto">
+                  <BarChart
+                    height={300}
+                    xAxis={[{ scaleType: 'band', data: topCategories.labels }]}
+                    series={[{ data: topCategories.data, label: 'Units Sold' }]}
+                  />
                 </div>
               </div>
             </div>

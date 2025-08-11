@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { FaPlus, FaEdit, FaTrash, FaEye, FaChartLine, FaBox, FaDollarSign, FaUsers, FaCog, FaTimes } from 'react-icons/fa';
 import { formatINR } from '../utils/formatCurrency';
 import sellerAPI from '../api/sellerAPI';
@@ -9,6 +9,9 @@ import { fetchOrders } from '../redux/slices/orderSlice';
 import VariantManager from '../components/common/VariantManager';
 import { toast } from 'react-toastify';
 import SellerWallet from '../components/seller/SellerWallet';
+import { LineChart } from '@mui/x-charts/LineChart';
+import { PieChart } from '@mui/x-charts/PieChart';
+import { BarChart } from '@mui/x-charts/BarChart';
 
 const ORDER_STATUSES = [
   'pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled', 'refunded'
@@ -237,6 +240,70 @@ const SellerDashboard = () => {
       .catch(() => setStats({ totalSales: 0, totalOrders: 0, totalProducts: 0, totalCustomers: 0 }))
       .finally(() => setStatsLoading(false));
   }, []);
+
+  // ----- Charts Data (Seller Overview) -----
+  const lastSixMonths = useMemo(() => {
+    const result = [];
+    const now = new Date();
+    for (let i = 5; i >= 0; i -= 1) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      result.push({
+        key: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`,
+        label: d.toLocaleString(undefined, { month: 'short' }),
+        year: d.getFullYear(),
+        month: d.getMonth(),
+      });
+    }
+    return result;
+  }, []);
+
+  const revenueSeries = useMemo(() => {
+    const buckets = lastSixMonths.reduce((acc, m) => ({ ...acc, [m.key]: 0 }), {});
+    (orders || []).forEach((o) => {
+      const created = new Date(o.createdAt);
+      const key = `${created.getFullYear()}-${String(created.getMonth() + 1).padStart(2, '0')}`;
+      if (key in buckets) {
+        const total = typeof o.totalPrice === 'number' ? o.totalPrice : (o.total || 0);
+        buckets[key] += total;
+      }
+    });
+    return lastSixMonths.map((m) => buckets[m.key]);
+  }, [orders, lastSixMonths]);
+
+  const orderStatusData = useMemo(() => {
+    const count = {};
+    (orders || []).forEach((o) => {
+      const st = (o.orderStatus || o.status || 'pending').toLowerCase();
+      count[st] = (count[st] || 0) + 1;
+    });
+    const entries = Object.entries(count);
+    return entries.map(([label, value], id) => ({ id, value, label }));
+  }, [orders]);
+
+  const topProductsData = useMemo(() => {
+    // Prefer product.soldCount; fallback to order aggregation
+    const soldMap = new Map();
+    (products || []).forEach((p) => {
+      const sold = typeof p.soldCount === 'number' ? p.soldCount : 0;
+      soldMap.set(p.name, sold);
+    });
+    if ([...soldMap.values()].every((v) => v === 0)) {
+      (orders || []).forEach((o) => {
+        (o.orderItems || []).forEach((it) => {
+          const name = it.product?.name || it.name || 'Item';
+          const qty = Number(it.quantity) || 0;
+          soldMap.set(name, (soldMap.get(name) || 0) + qty);
+        });
+      });
+    }
+    const list = [...soldMap.entries()].map(([name, qty]) => ({ name, qty }));
+    list.sort((a, b) => b.qty - a.qty);
+    const top = list.slice(0, 5);
+    return {
+      labels: top.map((t) => t.name),
+      data: top.map((t) => t.qty),
+    };
+  }, [products, orders]);
 
   // Add product handler
   const handleAddProduct = async (e) => {
@@ -614,55 +681,78 @@ const SellerDashboard = () => {
           {/* Overview Tab */}
           {activeTab === 'overview' && (
             <div className="space-y-6">
-              <div>
-                <h3 className="text-lg font-semibold text-gray-800 mb-4">Recent Activity</h3>
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <p className="text-gray-600">No recent activity to display</p>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="bg-white rounded-lg shadow-md p-4">
+                  <h3 className="text-lg font-semibold text-gray-800 mb-4">Revenue Trend (Last 6 months)</h3>
+                  <div className="w-full overflow-x-auto">
+                    <LineChart
+                      height={260}
+                      series={[{ data: revenueSeries, label: 'Revenue' }]}
+                      xAxis={[{ scaleType: 'point', data: lastSixMonths.map((m) => m.label) }]}
+                    />
+                  </div>
+                </div>
+                <div className="bg-white rounded-lg shadow-md p-4">
+                  <h3 className="text-lg font-semibold text-gray-800 mb-4">Orders by Status</h3>
+                  <div className="w-full flex justify-center">
+                    <PieChart
+                      height={260}
+                      series={[{
+                        data: orderStatusData,
+                        valueFormatter: (item) => `${item.value}`,
+                        innerRadius: 40,
+                      }]}
+                      slotProps={{ legend: { hidden: false } }}
+                    />
+                  </div>
                 </div>
               </div>
-
+              <div className="bg-white rounded-lg shadow-md p-4">
+                  <h3 className="text-lg font-semibold text-gray-800 mb-4">Top Products by Sales</h3>
+                <div className="w-full overflow-x-auto">
+                  <BarChart
+                    height={300}
+                    xAxis={[{ scaleType: 'band', data: topProductsData.labels }]}
+                    series={[{ data: topProductsData.data, label: 'Units Sold' }]}
+                  />
+                </div>
+              </div>
+              
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-800 mb-4">Top Selling Products</h3>
+                  <h3 className="text-lg font-semibold text-gray-800 mb-4">Recent Orders</h3>
                   <div className="space-y-3">
-                    {products.slice(0, 3).map((product) => (
-                      <div key={product.id} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
+                    {(orders || []).slice(0, 3).map((order) => (
+                      <div key={order._id} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
+                        <div>
+                          <p className="font-medium text-gray-800">#{order.orderNumber || String(order._id).slice(-8)}</p>
+                          <p className="text-sm text-gray-600">{order.user?.firstName} {order.user?.lastName}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-bold text-blue-600">{formatINR(order.totalPrice || order.total || 0)}</p>
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(order.orderStatus)}`}>{order.orderStatus}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-800 mb-4">Recent Products</h3>
+                  <div className="space-y-3">
+                    {(products || []).slice(0, 3).map((product) => (
+                      <div key={product._id} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
                         <div className="flex items-center">
                           <img
-                            src={product.image}
+                            src={product.images?.[0]?.url || '/product-images/default.webp'}
                             alt={product.name}
                             className="w-10 h-10 object-cover rounded mr-3"
                           />
                           <div>
                             <p className="font-medium text-gray-800">{product.name}</p>
-                            <p className="text-sm text-gray-600">{product.sales} sales</p>
+                            <p className="text-sm text-gray-600">Sold: {product.soldCount || 0}</p>
                           </div>
                         </div>
-                        <span className="font-bold text-blue-600">
-                          {formatINR(product.price)}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-800 mb-4">Recent Orders</h3>
-                  <div className="space-y-3">
-                    {orders.slice(0, 3).map((order) => (
-                      <div key={order.id} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
-                        <div>
-                          <p className="font-medium text-gray-800">{order.id}</p>
-                          <p className="text-sm text-gray-600">{order.customer}</p>
-                        </div>
-                        <div className="text-right">
-                          <p className="font-bold text-blue-600">
-                            {formatINR(order.total)}
-                          </p>
-                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(order.status)}`}>
-                            {order.status}
-                          </span>
-                        </div>
+                        <span className="font-bold text-blue-600">{formatINR(product.price)}</span>
                       </div>
                     ))}
                   </div>

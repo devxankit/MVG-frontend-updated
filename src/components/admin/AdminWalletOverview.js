@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { adminWalletAPI } from '../../api/walletAPI';
 import { formatINR as formatCurrency } from '../../utils/formatCurrency';
+import { LineChart } from '@mui/x-charts/LineChart';
 
 const AdminWalletOverview = () => {
   const [overview, setOverview] = useState(null);
@@ -137,7 +138,11 @@ const AdminWalletOverview = () => {
         <div className="bg-white rounded-lg shadow-md p-6 md:col-span-2">
           <h3 className="text-lg font-semibold text-gray-800 mb-4">Monthly Platform Earnings</h3>
           <div className="w-full h-56">
-            <Sparkline data={(overview.monthly || []).map(m => m.commission)} labels={(overview.monthly || []).map(m => `${m._id.m}/${m._id.y}`)} />
+            <LineChart
+              height={220}
+              series={[{ data: (overview.monthly || []).map(m => m.commission), label: 'Commission' }]}
+              xAxis={[{ scaleType: 'point', data: (overview.monthly || []).map(m => `${m._id.m}/${m._id.y}`) }]}
+            />
           </div>
         </div>
       </div>
@@ -165,31 +170,3 @@ const AdminWalletOverview = () => {
 };
 
 export default AdminWalletOverview;
-
-// Simple sparkline using inline SVG (no heavy deps)
-const Sparkline = ({ data = [], labels = [] }) => {
-  if (!data.length) return <div className="text-gray-400">No data</div>;
-  const width = 600;
-  const height = 180;
-  const padding = 24;
-  const max = Math.max(...data);
-  const min = Math.min(...data);
-  const xStep = (width - padding * 2) / Math.max(data.length - 1, 1);
-  const yScale = v => {
-    if (max === min) return height / 2;
-    return padding + (height - padding * 2) * (1 - (v - min) / (max - min));
-  };
-  const points = data.map((v, i) => `${padding + i * xStep},${yScale(v)}`).join(' ');
-  return (
-    <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-full">
-      <polyline fill="none" stroke="#10B981" strokeWidth="3" points={points} />
-      {data.map((v, i) => (
-        <circle key={i} cx={padding + i * xStep} cy={yScale(v)} r="3" fill="#10B981" />
-      ))}
-      {/* X labels */}
-      {labels.map((l, i) => (
-        <text key={i} x={padding + i * xStep} y={height - 4} fontSize="10" textAnchor="middle" fill="#6B7280">{l}</text>
-      ))}
-    </svg>
-  );
-};
