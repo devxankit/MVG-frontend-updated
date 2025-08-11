@@ -33,16 +33,12 @@ function App() {
 
   // Example product names for dynamic messages
   const productNames = [
-    'Wireless Earbuds',
-    'Running Shoes',
-    'Smart Watch',
-    'Bluetooth Speaker',
-    'Coffee Maker',
-    'Yoga Mat',
-    'Backpack',
-    'Sunglasses',
-    'Laptop Stand',
-    'Water Bottle',
+    'Fresh Milk',
+    'Fresh Bread',
+    'Fresh Vegetables',
+    'Fresh Fruits',
+    
+    
   ];
 
   // Example city names

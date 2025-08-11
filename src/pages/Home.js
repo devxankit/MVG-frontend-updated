@@ -37,7 +37,7 @@ const Home = () => {
   useEffect(() => {
     dispatch(fetchFeaturedProducts());
     // Use the new API with seller information
-    productAPI.getProductsWithSellerInfo().then(res => {
+    productAPI.getListedProducts().then(res => {
       // Update the products in the store
       dispatch({ type: 'products/fetchProducts/fulfilled', payload: res.data });
     }).catch(() => {
@@ -119,6 +119,24 @@ const Home = () => {
   useEffect(() => {
     productAPI.getDiscoverProducts().then(res => setDiscoverProducts(res.data)).catch(() => setDiscoverProducts([]));
     productAPI.getRecommendedProducts().then(res => setRecommendedProducts(res.data)).catch(() => setRecommendedProducts([]));
+  }, []);
+
+  // Helper function to prepare product data for ProductCard
+  const prepareProductForCard = (listing) => {
+    return {
+      ...listing.product,
+      seller: listing.seller,
+      sellerPrice: listing.sellerPrice,
+      sellerProductId: listing._id
+    };
+  };
+
+  // Fetch listed products for homepage
+  const [listedProducts, setListedProducts] = useState([]);
+  useEffect(() => {
+    productAPI.getListedProducts().then(res => {
+      setListedProducts(res.data);
+    }).catch(() => setListedProducts([]));
   }, []);
 
   return (
@@ -220,13 +238,13 @@ const Home = () => {
             </div>
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 sm:gap-6 justify-items-center">
-              {(Array.isArray(featuredProducts) ? featuredProducts : []).slice(0, 12).map((product) => (
+              {(Array.isArray(featuredProducts) ? featuredProducts : []).slice(0, 12).map((listing) => (
                 <ProductCard
-                  key={product._id}
-                  product={product}
+                  key={listing._id}
+                  product={prepareProductForCard(listing)}
                   isInWishlist={isInWishlist}
                   handleWishlist={handleWishlist}
-                  handleAddToCart={() => handleAddToCart(product)}
+                  handleAddToCart={() => handleAddToCart(prepareProductForCard(listing))}
                   showWishlist={true}
                   showAddToCart={true}
                   showRating={true}
@@ -255,13 +273,13 @@ const Home = () => {
             </Link>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 sm:gap-6 justify-items-center">
-            {discoverProducts.slice(0, 12).map((product) => (
+            {discoverProducts.slice(0, 12).map((listing) => (
               <ProductCard
-                key={product._id}
-                product={product}
+                key={listing._id}
+                product={prepareProductForCard(listing)}
                 isInWishlist={isInWishlist}
                 handleWishlist={handleWishlist}
-                handleAddToCart={() => handleAddToCart(product)}
+                handleAddToCart={() => handleAddToCart(prepareProductForCard(listing))}
                 showWishlist={true}
                 showAddToCart={true}
                 showRating={true}
@@ -289,13 +307,13 @@ const Home = () => {
             </Link>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {recommendedProducts.slice(0, 8).map((product) => (
+            {recommendedProducts.slice(0, 8).map((listing) => (
               <ProductCard
-                key={product._id}
-                product={product}
+                key={listing._id}
+                product={prepareProductForCard(listing)}
                 isInWishlist={isInWishlist}
                 handleWishlist={handleWishlist}
-                handleAddToCart={() => handleAddToCart(product)}
+                handleAddToCart={() => handleAddToCart(prepareProductForCard(listing))}
                 showWishlist={true}
                 showAddToCart={true}
                 showRating={true}

@@ -204,6 +204,10 @@ const productAPI = {
   undiscoverSellerProduct: (id) => axiosInstance.patch(`/products/seller-listings/${id}/undiscover`),
   recommendSellerProduct: (id) => axiosInstance.patch(`/products/seller-listings/${id}/recommend`),
   unrecommendSellerProduct: (id) => axiosInstance.patch(`/products/seller-listings/${id}/unrecommend`),
+  // Get all listed products (SellerProduct with populated product)
+  getListedProducts: () => {
+    return axiosInstance.get('/products/listed');
+  },
 };
 
 export default productAPI; 

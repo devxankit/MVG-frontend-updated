@@ -82,21 +82,12 @@ const ProductList = () => {
   // Fetch products (optionally by category)
   useEffect(() => {
     setLoading(true);
-    const fetch = category && category !== 'all'
-      ? productAPI.getProductsWithSellerInfo().then(res => res.data.filter(product => {
-          return (
-            String(product.category?._id || product.category) === String(category) ||
-            (product.subCategory && String(product.subCategory?._id || product.subCategory) === String(category))
-          );
-        }))
-      : productAPI.getProductsWithSellerInfo().then(res => res.data);
-    Promise.resolve(fetch).then(data => {
-      setProducts(data);
+    productAPI.getListedProducts().then(res => {
+      setProducts(res.data);
       setLoading(false);
-      console.log('Fetched products with seller info from API:', data);
     }).catch((err) => {
       setLoading(false);
-      console.error('Error fetching products with seller info:', err);
+      console.error('Error fetching listed products:', err);
     });
   }, [category]);
 
@@ -111,11 +102,12 @@ const ProductList = () => {
   // For seller listings, filter/search/sort on product fields
   const filteredProducts = products.filter(listing => {
     const product = listing.product;
+    if (!product || !product.name) return false; // Guard clause
     const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory =
       category === 'all' ||
-      String(product.category) === String(category) ||
-      (product.subCategory && String(product.subCategory) === String(category));
+      String(product.category?._id || product.category) === String(category) ||
+      (product.subCategory && String(product.subCategory?._id || product.subCategory) === String(category));
     return matchesSearch && matchesCategory;
   });
 
@@ -124,12 +116,14 @@ const ProductList = () => {
     const bProduct = b.product;
     switch (sortBy) {
       case 'price-low':
-        return a.sellerPrice - b.sellerPrice;
+        return (a.sellerPrice || aProduct.price) - (b.sellerPrice || bProduct.price);
       case 'price-high':
-        return b.sellerPrice - a.sellerPrice;
+        return (b.sellerPrice || bProduct.price) - (a.sellerPrice || aProduct.price);
       case 'rating':
-        return (bProduct.rating || 0) - (aProduct.rating || 0);
+        return (bProduct?.rating || 0) - (aProduct?.rating || 0);
       default:
+        if (!aProduct || !aProduct.name) return 1;
+        if (!bProduct || !bProduct.name) return -1;
         return aProduct.name.localeCompare(bProduct.name);
     }
   });
@@ -257,10 +251,10 @@ const ProductList = () => {
           {sortedProducts.map((listing) => (
             <ProductCard
               key={listing._id}
-              product={{ ...listing.product, seller: listing.seller, sellerPrice: listing.sellerPrice, listingId: listing._id }}
+              product={{ ...listing.product, seller: listing.seller, sellerPrice: listing.sellerPrice, sellerProductId: listing._id }}
               isInWishlist={isInWishlist}
               handleWishlist={handleWishlist}
-              handleAddToCart={() => handleAddToCart({ ...listing.product, _id: listing._id })}
+              handleAddToCart={() => handleAddToCart({ ...listing.product, _id: listing._id, seller: listing.seller, sellerPrice: listing.sellerPrice, sellerProductId: listing._id })}
             />
           ))}
         </div>
