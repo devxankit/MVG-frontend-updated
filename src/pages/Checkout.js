@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { FaLock, FaCreditCard, FaPaypal, FaApplePay, FaGooglePay, FaMoneyBillWave } from 'react-icons/fa';
+import { FaLock, FaMoneyBillWave } from 'react-icons/fa';
 import { formatINR } from '../utils/formatCurrency';
 import { useSelector, useDispatch } from 'react-redux';
 import { createOrder } from '../redux/slices/orderSlice';
@@ -34,12 +34,6 @@ const Checkout = () => {
     country: 'India',
   });
   const [paymentMethod, setPaymentMethod] = useState('razorpay');
-  const [cardData, setCardData] = useState({
-    cardNumber: '',
-    expiryDate: '',
-    cvv: '',
-    cardholderName: ''
-  });
   const [coupon, setCoupon] = useState('');
   const [couponStatus, setCouponStatus] = useState('');
   const [discount, setDiscount] = useState(0);
@@ -54,10 +48,7 @@ const Checkout = () => {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleCardInputChange = (e) => {
-    const { name, value } = e.target;
-    setCardData(prev => ({ ...prev, [name]: value }));
-  };
+  // No card input handling required (only Razorpay and COD)
 
   const loadRazorpayScript = () => {
     return new Promise((resolve) => {
@@ -100,13 +91,7 @@ const Checkout = () => {
       return;
     }
 
-    // Validate card data for credit card payments
-    if (paymentMethod === 'credit-card') {
-      if (!cardData.cardholderName || !cardData.cardNumber || !cardData.expiryDate || !cardData.cvv) {
-        toast.error('Please fill in all card details');
-        return;
-      }
-    }
+    // No card validation required
 
     // Debug cart items
     console.log('Cart items:', cartItems);
@@ -143,7 +128,6 @@ const Checkout = () => {
         sellerProduct: typeof item.sellerProduct === 'object' ? item.sellerProduct._id : item.sellerProduct,
       })),
       paymentMethod: paymentMethod === 'cod' ? 'cod' : paymentMethod,
-      cardData: paymentMethod === 'credit-card' ? cardData : undefined,
       coupon: appliedCoupon,
       discount,
       total: total - discount,
@@ -276,7 +260,7 @@ const Checkout = () => {
         <div className="lg:col-span-2">
           <form onSubmit={handleSubmit} className="space-y-8">
             {/* Shipping Information */}
-            <div className="bg-white rounded-lg shadow-md p-6">
+            <div className="bg-white rounded-lg shadow-lg border border-gray-100 p-6">
               <h2 className="text-xl font-semibold text-gray-800 mb-4">Shipping Information</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
@@ -321,36 +305,16 @@ const Checkout = () => {
               </div>
             </div>
             {/* Payment Method */}
-            <div className="bg-white rounded-lg shadow-md p-6">
+            <div className="bg-white rounded-lg shadow-lg border border-gray-100 p-6">
               <h2 className="text-xl font-semibold text-gray-800 mb-4">Payment Method</h2>
               <div className="space-y-4">
                 <label className={`flex items-center p-4 border rounded-lg cursor-pointer transition-colors ${
-                  paymentMethod === 'razorpay'
-                    ? 'border-green-500 bg-green-50'
+                  paymentMethod === 'cod' 
+                    ? 'border-green-500 bg-green-50' 
                     : 'border-gray-300 hover:bg-gray-50'
                 }`}>
                   <input type="radio" name="paymentMethod" value="razorpay" checked={paymentMethod === 'razorpay'} onChange={e => setPaymentMethod(e.target.value)} className="mr-3" />
                   <span className="font-medium">Razorpay (UPI / Cards / Netbanking)</span>
-                </label>
-                <label className="flex items-center p-4 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50">
-                  <input type="radio" name="paymentMethod" value="credit-card" checked={paymentMethod === 'credit-card'} onChange={e => setPaymentMethod(e.target.value)} className="mr-3" />
-                  <FaCreditCard className="text-green-600 mr-3" />
-                  <span className="font-medium">Credit Card</span>
-                </label>
-                <label className="flex items-center p-4 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50">
-                  <input type="radio" name="paymentMethod" value="paypal" checked={paymentMethod === 'paypal'} onChange={e => setPaymentMethod(e.target.value)} className="mr-3" />
-                  <FaPaypal className="text-green-600 mr-3" />
-                  <span className="font-medium">PayPal</span>
-                </label>
-                <label className="flex items-center p-4 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50">
-                  <input type="radio" name="paymentMethod" value="apple-pay" checked={paymentMethod === 'apple-pay'} onChange={e => setPaymentMethod(e.target.value)} className="mr-3" />
-                  <FaApplePay className="text-green-600 mr-3" />
-                  <span className="font-medium">Apple Pay</span>
-                </label>
-                <label className="flex items-center p-4 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50">
-                  <input type="radio" name="paymentMethod" value="google-pay" checked={paymentMethod === 'google-pay'} onChange={e => setPaymentMethod(e.target.value)} className="mr-3" />
-                  <FaGooglePay className="text-green-600 mr-3" />
-                  <span className="font-medium">Google Pay</span>
                 </label>
                 <label className={`flex items-center p-4 border rounded-lg cursor-pointer transition-colors ${
                   paymentMethod === 'cod' 
@@ -365,30 +329,8 @@ const Checkout = () => {
                   </div>
                 </label>
               </div>
-              {/* Credit Card Form */}
-              {paymentMethod === 'credit-card' && (
-                <div className="mt-6 p-4 border border-gray-200 rounded-lg bg-gray-50">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="md:col-span-2">
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Cardholder Name</label>
-                      <input type="text" name="cardholderName" value={cardData.cardholderName} onChange={handleCardInputChange} required className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent" />
-                    </div>
-                    <div className="md:col-span-2">
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Card Number</label>
-                      <input type="text" name="cardNumber" value={cardData.cardNumber} onChange={handleCardInputChange} placeholder="1234 5678 9012 3456" required className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent" />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Expiry Date</label>
-                      <input type="text" name="expiryDate" value={cardData.expiryDate} onChange={handleCardInputChange} placeholder="MM/YY" required className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent" />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">CVV</label>
-                      <input type="text" name="cvv" value={cardData.cvv} onChange={handleCardInputChange} placeholder="123" required className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
-                    </div>
-                  </div>
-                </div>
-              )}
-              
+              {/* Credit card form removed; Razorpay modal handles cards */}
+
               {/* COD Notice */}
               {paymentMethod === 'cod' && (
                 <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
@@ -425,7 +367,9 @@ const Checkout = () => {
               ) : (
                 <>
                   <FaLock />
-                  {paymentMethod === 'cod' ? 'Place Order (Cash on Delivery)' : 'Place Order'}
+                  {paymentMethod === 'cod' 
+                    ? `Place Order • ${formatINR(total - discount)}` 
+                    : `Pay ${formatINR(total - discount)}`}
                 </>
               )}
             </button>
@@ -433,14 +377,26 @@ const Checkout = () => {
         </div>
         {/* Order Summary */}
         <div className="lg:col-span-1">
-          <div className="bg-white rounded-lg shadow-md p-6 sticky top-4">
+          <div className="bg-white rounded-lg shadow-lg border border-gray-100 p-6 sticky top-4">
             <h2 className="text-xl font-semibold text-gray-800 mb-4">Order Summary</h2>
             {/* Coupon Code Input */}
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 mb-1">Coupon Code</label>
-              <div className="flex gap-2">
-                <input type="text" value={coupon} onChange={e => setCoupon(e.target.value)} className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Enter coupon code" />
-                <button type="button" onClick={handleApplyCoupon} className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">Apply</button>
+              <div className="flex w-full">
+                <input 
+                  type="text" 
+                  value={coupon} 
+                  onChange={e => setCoupon(e.target.value)} 
+                  className="flex-1 min-w-0 px-3 py-2 border border-gray-300 rounded-l-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                  placeholder="Enter coupon code" 
+                />
+                <button 
+                  type="button" 
+                  onClick={handleApplyCoupon} 
+                  className="shrink-0 px-4 py-2 bg-blue-600 text-white rounded-r-lg hover:bg-blue-700 border border-blue-600"
+                >
+                  Apply
+                </button>
               </div>
               {couponStatus && <div className={`mt-1 text-sm ${discount ? 'text-green-600' : 'text-red-600'}`}>{couponStatus}</div>}
             </div>

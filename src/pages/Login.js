@@ -47,18 +47,12 @@ const Login = () => {
   const from = redirect || location.state?.from?.pathname || '/';
 
   useEffect(() => {
+    // If user is already authenticated on page load or refresh,
+    // just redirect silently without showing success toasts.
     if (isAuthenticated) {
-      // Show success message based on form type
-      if (formType === 'login') {
-        toast.success('Login successful!');
-      } else if (formType === 'register') {
-        toast.success('Registration successful!');
-      } else if (formType === 'seller') {
-        toast.success('Seller registration submitted! You can use the website as a regular user while waiting for admin approval.');
-      }
       navigate(from, { replace: true });
     }
-  }, [isAuthenticated, navigate, from, formType]);
+  }, [isAuthenticated, navigate, from]);
 
   useEffect(() => {
     if (error) {
@@ -182,16 +176,18 @@ const Login = () => {
       try {
         if (formType === 'login') {
           await dispatch(login(data)).unwrap();
-          // Success toast will be handled by the component that uses this
+          toast.success('Login successful!');
         } else if (formType === 'register') {
           const { confirmPassword, ...registerPayload } = data;
           await dispatch(register(registerPayload)).unwrap();
-          // Success toast will be handled by the component that uses this
+          toast.success('Registration successful!');
         } else if (formType === 'seller') {
           const { confirmPassword, ...sellerPayload } = data;
           await dispatch(registerSeller(sellerPayload)).unwrap();
-          // Success toast will be handled by the component that uses this
+          toast.success('Seller registration submitted! You can use the website as a regular user while waiting for admin approval.');
         }
+        // Navigate after success; useEffect also guards redirection if state updates later
+        navigate(from, { replace: true });
       } catch (error) {
         // Error is already handled in useEffect for known errors
         if (!error || typeof error !== 'string') {
