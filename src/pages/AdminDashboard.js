@@ -8,6 +8,9 @@ import { useDispatch } from 'react-redux';
 import { fetchFeaturedProducts } from '../redux/slices/productSlice';
 import { TextField, Button, Button as MUIButton, Grid, Card, CardContent, Typography, Select, Select as MUISelect, MenuItem, InputLabel, FormControl, Box } from '@mui/material';
 import { toast } from 'react-toastify';
+import AdminWalletOverview from '../components/admin/AdminWalletOverview';
+import AdminWithdrawalManagement from '../components/admin/AdminWithdrawalManagement';
+import AdminSellerEarnings from '../components/admin/AdminSellerEarnings';
 
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState('overview');
@@ -58,6 +61,8 @@ const [imageUploadProgress, setImageUploadProgress] = useState(0);
   const [eventForm, setEventForm] = useState({ title: '', description: '', endDate: '', product: '' });
   const [eventLoading, setEventLoading] = useState(false);
   const [eventError, setEventError] = useState('');
+
+  const [walletSubTab, setWalletSubTab] = useState('overview');
 
   // --- Refactor: Separate admin products and seller listings ---
   const [adminProducts, setAdminProducts] = useState([]); // Admin product templates
@@ -683,6 +688,16 @@ const [imageUploadProgress, setImageUploadProgress] = useState(0);
               }`}
             >
               Event Banner
+            </button>
+            <button
+              onClick={() => setActiveTab('wallet')}
+              className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'wallet'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              Wallet
             </button>
           </nav>
         </div>
@@ -1439,6 +1454,51 @@ const [imageUploadProgress, setImageUploadProgress] = useState(0);
                   </Card>
                 </div>
               )}
+            </div>
+          )}
+
+          {/* Wallet Tab */}
+          {activeTab === 'wallet' && (
+            <div className="p-6">
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold text-gray-800 mb-4">Wallet Management</h3>
+                <div className="flex space-x-4">
+                  <button
+                    onClick={() => setWalletSubTab('overview')}
+                    className={`px-4 py-2 rounded-lg font-medium ${
+                      walletSubTab === 'overview'
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    Overview
+                  </button>
+                  <button
+                    onClick={() => setWalletSubTab('withdrawals')}
+                    className={`px-4 py-2 rounded-lg font-medium ${
+                      walletSubTab === 'withdrawals'
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    Withdrawals
+                  </button>
+                  <button
+                    onClick={() => setWalletSubTab('sellers')}
+                    className={`px-4 py-2 rounded-lg font-medium ${
+                      walletSubTab === 'sellers'
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    Seller Earnings
+                  </button>
+                </div>
+              </div>
+
+              {walletSubTab === 'overview' && <AdminWalletOverview />}
+              {walletSubTab === 'withdrawals' && <AdminWithdrawalManagement />}
+              {walletSubTab === 'sellers' && <AdminSellerEarnings />}
             </div>
           )}
 

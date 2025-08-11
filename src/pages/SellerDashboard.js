@@ -8,6 +8,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { fetchOrders } from '../redux/slices/orderSlice';
 import VariantManager from '../components/common/VariantManager';
 import { toast } from 'react-toastify';
+import SellerWallet from '../components/seller/SellerWallet';
 
 const ORDER_STATUSES = [
   'pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled', 'refunded'
@@ -599,6 +600,12 @@ const SellerDashboard = () => {
               className={`py-4 text-sm font-medium ${activeTab === 'coupons' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-600 hover:text-blue-600'}`}
             >
               Coupons
+            </button>
+            <button
+              onClick={() => setActiveTab('wallet')}
+              className={`py-4 text-sm font-medium ${activeTab === 'wallet' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-600 hover:text-blue-600'}`}
+            >
+              Wallet
             </button>
           </nav>
         </div>
@@ -1345,6 +1352,14 @@ const SellerDashboard = () => {
                   </div>
                 </div>
               )}
+            </div>
+          )}
+
+          {/* Wallet Tab */}
+          {activeTab === 'wallet' && (
+            <div>
+              <h2 className="text-xl font-semibold mb-4">Wallet & Earnings</h2>
+              <SellerWallet />
             </div>
           )}
 
