@@ -92,7 +92,7 @@ const RelatedProducts = ({ currentProduct, title = 'Related products' }) => {
       <div className="flex items-baseline justify-between mb-3">
         <h2 className="text-xl font-semibold text-gray-900">{title}</h2>
         {currentProduct.category && (
-          <Link to={`/categories/${currentProduct.category}`} className="text-green-600 text-sm hover:underline">View all</Link>
+          <Link to={`/products`} className="text-green-600 text-sm hover:underline">View all</Link>
         )}
       </div>
       {loading && (
