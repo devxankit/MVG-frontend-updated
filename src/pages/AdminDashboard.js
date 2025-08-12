@@ -378,9 +378,10 @@ const [imageUploadProgress, setImageUploadProgress] = useState(0);
     formData.append('name', categoryForm.name);
     formData.append('slug', categoryForm.slug);
     formData.append('description', categoryForm.description);
+    if (categoryForm.parentCategory) formData.append('parentCategory', categoryForm.parentCategory);
     if (categoryForm.image) formData.append('image', categoryForm.image);
     try {
-      if (categoryModal.category) {
+      if (categoryModal.category && categoryModal.category._id) {
         await productAPI.updateCategory(categoryModal.category._id, formData);
       } else {
         await productAPI.createCategory(formData);

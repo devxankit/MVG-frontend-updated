@@ -19,7 +19,13 @@ const categoryImageMap = {
 };
 
 const CategoriesGrid = ({ categories, circular = false }) => (
-  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
+  <div
+    className={
+      circular
+        ? "flex flex-wrap justify-center gap-12"
+        : "grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6"
+    }
+  >
     {categories.map((category, index) => (
       category && category.name ? (
         <div key={category._id || index} className="group">
@@ -31,7 +37,7 @@ const CategoriesGrid = ({ categories, circular = false }) => (
               className={[
                 "relative bg-gray-100 transition-colors overflow-hidden flex items-center justify-center",
                 circular
-                  ? "rounded-full aspect-square hover:bg-primary-50"
+                  ? "rounded-full aspect-square w-36 sm:w-40 md:w-44 lg:w-48 hover:bg-primary-50"
                   : "rounded-lg p-6 text-center hover:bg-primary-50 h-48 flex-col justify-end"
               ].join(" ")}
             >
