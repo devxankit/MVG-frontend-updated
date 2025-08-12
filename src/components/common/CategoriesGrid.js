@@ -18,7 +18,7 @@ const categoryImageMap = {
   toysandgames: './images/toy and game.jpeg',
 };
 
-const CategoriesGrid = ({ categories }) => (
+const CategoriesGrid = ({ categories, circular = false }) => (
   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
     {categories.map((category, index) => (
       category && category.name ? (
@@ -27,7 +27,14 @@ const CategoriesGrid = ({ categories }) => (
             to={`/products?category=${category._id}`}
             className="block"
           >
-            <div className="relative bg-gray-100 rounded-lg p-6 text-center hover:bg-primary-50 transition-colors overflow-hidden h-48 flex flex-col justify-end items-center">
+            <div
+              className={[
+                "relative bg-gray-100 transition-colors overflow-hidden flex items-center justify-center",
+                circular
+                  ? "rounded-full aspect-square hover:bg-primary-50"
+                  : "rounded-lg p-6 text-center hover:bg-primary-50 h-48 flex-col justify-end"
+              ].join(" ")}
+            >
               <img
                 src={
                   category.image ||
@@ -43,11 +50,14 @@ const CategoriesGrid = ({ categories }) => (
                 className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 ease-in-out group-hover:scale-110 z-0"
                 style={{ filter: 'brightness(0.7)' }}
               />
-              <div className="relative z-10">
-                <h3 className="font-semibold mb-2 group-hover:text-primary-600 text-white text-lg drop-shadow-lg">
+              <div className={circular ? "relative z-10 text-center" : "relative z-10"}>
+                <h3 className={[
+                  "font-semibold group-hover:text-primary-600 text-white text-lg drop-shadow-lg",
+                  circular ? "m-0" : "mb-2"
+                ].join(" ")}>
                   {category.name || 'Unnamed Category'}
                 </h3>
-                {category.count !== undefined && (
+                {!circular && category.count !== undefined && (
                   <p className="text-sm text-gray-200 drop-shadow-lg">{category.count} products</p>
                 )}
               </div>

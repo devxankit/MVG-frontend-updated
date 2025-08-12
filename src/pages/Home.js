@@ -158,7 +158,7 @@ const Home = () => {
               View All Categories <FaArrowRight className="ml-2" />
             </Link>
           </div>
-          <CategoriesGrid categories={mainCategories} />
+          <CategoriesGrid categories={mainCategories} circular />
           <div className="flex justify-center mt-8 md:hidden">
             <Link
               to="/categories"
