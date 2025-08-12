@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Link, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { 
@@ -32,20 +33,8 @@ const Header = () => {
   const { itemCount } = useSelector((state) => state.cart);
 
   const wishlistItems = useSelector((state) => state.wishlist.items);
-  const drawerRef = useRef();
 
-
-  // Close drawer on outside click
-  useEffect(() => {
-    if (!isMenuOpen) return;
-    function handleClick(e) {
-      if (drawerRef.current && !drawerRef.current.contains(e.target)) {
-        setIsMenuOpen(false);
-      }
-    }
-    document.addEventListener('mousedown', handleClick);
-    return () => document.removeEventListener('mousedown', handleClick);
-  }, [isMenuOpen]);
+  // Outside click handled via overlay in MobileDrawer
 
 
 
@@ -105,6 +94,8 @@ const Header = () => {
       setSuggestions([]);
     }
   };
+
+  // Scroll lock handled inside MobileDrawer
 
   return (
     <header className="bg-white/95 backdrop-blur-md shadow-lg border-b border-gray-200 sticky top-0 z-50 transition-all duration-300">
@@ -258,63 +249,109 @@ const Header = () => {
           </div>
         </div>
       </div>
-      {/* Mobile Drawer & Overlay */}
-      {isMenuOpen && (
-        <div className="fixed inset-0 z-40 md:hidden">
-          {/* Overlay */}
-          <div
-            className="fixed inset-0 bg-black bg-opacity-40 transition-opacity duration-300"
+      <MobileDrawer open={isMenuOpen} onClose={() => setIsMenuOpen(false)}>
+        <div className="flex justify-between items-center px-4 py-4 border-b">
+          <span className="text-xl font-bold text-primary-600">Menu</span>
+          <button
             onClick={() => setIsMenuOpen(false)}
-          />
-          {/* Drawer */}
-          <aside
-            ref={drawerRef}
-            className="fixed top-0 right-0 h-full w-4/5 max-w-xs bg-white shadow-lg z-50 transform transition-transform duration-300 animate-slide-in-right"
+            aria-label="Close menu"
+            className="text-gray-600 hover:text-primary-600 text-2xl transition-colors duration-200"
           >
-          <div className="flex justify-between items-center px-4 py-4 border-b">
-            <span className="text-xl font-bold text-primary-600">Menu</span>
-            <button onClick={() => setIsMenuOpen(false)} aria-label="Close menu" className="text-gray-600 hover:text-primary-600 text-2xl transition-colors duration-200">
-              <FaTimes />
-            </button>
-          </div>
-          <nav className="flex flex-col space-y-2 px-6 py-6 text-base font-medium">
-            <Link to="/" className="nav-link px-2 py-2 rounded hover:bg-primary-50 hover:text-primary-600 transition-colors duration-200" onClick={() => setIsMenuOpen(false)}>Home</Link>
-            <Link to="/products" className="nav-link px-2 py-2 rounded hover:bg-primary-50 hover:text-primary-600 transition-colors duration-200" onClick={() => setIsMenuOpen(false)}>Products</Link>
-            <Link to="/categories" className="nav-link px-2 py-2 rounded hover:bg-primary-50 hover:text-primary-600 transition-colors duration-200" onClick={() => setIsMenuOpen(false)}>Categories</Link>
-            {/* Conditionally render Become a Vendor */}
-            {(!isAuthenticated || (user && user.role !== 'seller') || (user && user.role === 'admin')) && (
-              <Link to="/login" className="nav-link px-2 py-2 rounded hover:bg-primary-50 hover:text-primary-600 transition-colors duration-200" onClick={() => setIsMenuOpen(false)}>Become a Vendor</Link>
-            )}
-           
-            {isAuthenticated && user?.role === 'seller' && (
-              <Link to="/seller/dashboard" className="nav-link px-2 py-2 rounded hover:bg-primary-50 hover:text-primary-600 transition-colors duration-200" onClick={() => setIsMenuOpen(false)}>Seller Dashboard</Link>
-            )}
-            {isAuthenticated && user?.role === 'admin' && (
-              <Link to="/admin/dashboard" className="nav-link flex items-center px-2 py-2 rounded hover:bg-primary-50 hover:text-primary-600 transition-colors duration-200" onClick={() => setIsMenuOpen(false)}>
-                <FaTachometerAlt className="mr-1" /> Admin Dashboard
-              </Link>
-            )}
-            <div className="border-t pt-4 mt-4">
-              {isAuthenticated ? (
-                <>
-                  <Link to="/profile" className="nav-link px-2 py-2 rounded hover:bg-primary-50 hover:text-primary-600 transition-colors duration-200" onClick={() => setIsMenuOpen(false)}>Profile</Link>
-                  <button onClick={handleLogout} className="nav-link flex items-center w-full text-left px-2 py-2 rounded hover:bg-primary-50 hover:text-primary-600 transition-colors duration-200">
-                    <FaSignOutAlt className="mr-2" /> Logout
-                  </button>
-                </>
-              ) : (
-                <>
-                  <Link to="/login" className="btn-outline w-full mb-2 text-center px-3 py-2 text-sm" onClick={() => setIsMenuOpen(false)}>Login</Link>
-                  <Link to="/register" className="btn-primary w-full text-center px-3 py-2 text-sm" onClick={() => setIsMenuOpen(false)}>Register</Link>
-                </>
-              )}
-            </div>
-          </nav>
-        </aside>
+            <FaTimes />
+          </button>
         </div>
-      )}
+        <nav className="flex flex-col space-y-2 px-6 py-6 text-base font-medium flex-1 overflow-y-auto">
+          <Link to="/" className="nav-link px-2 py-2 rounded hover:bg-primary-50 hover:text-primary-600 transition-colors duration-200" onClick={() => setIsMenuOpen(false)}>Home</Link>
+          <Link to="/products" className="nav-link px-2 py-2 rounded hover:bg-primary-50 hover:text-primary-600 transition-colors duration-200" onClick={() => setIsMenuOpen(false)}>Products</Link>
+          <Link to="/categories" className="nav-link px-2 py-2 rounded hover:bg-primary-50 hover:text-primary-600 transition-colors duration-200" onClick={() => setIsMenuOpen(false)}>Categories</Link>
+          {(!isAuthenticated || (user && user.role !== 'seller') || (user && user.role === 'admin')) && (
+            <Link to="/login" className="nav-link px-2 py-2 rounded hover:bg-primary-50 hover:text-primary-600 transition-colors duration-200" onClick={() => setIsMenuOpen(false)}>Become a Vendor</Link>
+          )}
+          {isAuthenticated && user?.role === 'seller' && (
+            <Link to="/seller/dashboard" className="nav-link px-2 py-2 rounded hover:bg-primary-50 hover:text-primary-600 transition-colors duration-200" onClick={() => setIsMenuOpen(false)}>Seller Dashboard</Link>
+          )}
+          {isAuthenticated && user?.role === 'admin' && (
+            <Link to="/admin/dashboard" className="nav-link flex items-center px-2 py-2 rounded hover:bg-primary-50 hover:text-primary-600 transition-colors duration-200" onClick={() => setIsMenuOpen(false)}>
+              <FaTachometerAlt className="mr-1" /> Admin Dashboard
+            </Link>
+          )}
+          <div className="border-t pt-4 mt-4">
+            {isAuthenticated ? (
+              <>
+                <Link to="/profile" className="nav-link px-2 py-2 rounded hover:bg-primary-50 hover:text-primary-600 transition-colors duration-200" onClick={() => setIsMenuOpen(false)}>Profile</Link>
+                <button onClick={handleLogout} className="nav-link flex items-center w-full text-left px-2 py-2 rounded hover:bg-primary-50 hover:text-primary-600 transition-colors duration-200">
+                  <FaSignOutAlt className="mr-2" /> Logout
+                </button>
+              </>
+            ) : (
+              <>
+                <Link to="/login" className="btn-outline w-full mb-2 text-center px-3 py-2 text-sm" onClick={() => setIsMenuOpen(false)}>Login</Link>
+                <Link to="/register" className="btn-primary w-full text-center px-3 py-2 text-sm" onClick={() => setIsMenuOpen(false)}>Register</Link>
+              </>
+            )}
+          </div>
+        </nav>
+      </MobileDrawer>
     </header>
   );
 };
 
 export default Header; 
+
+// Mobile Drawer portalized to body for isolation and robust layering
+const MobileDrawer = ({ open, onClose, children }) => {
+  const [mounted, setMounted] = useState(false);
+  const containerRef = useRef(null);
+
+  useEffect(() => {
+    setMounted(true);
+    if (!containerRef.current) {
+      const el = document.createElement('div');
+      el.setAttribute('id', 'mobile-drawer-root');
+      document.body.appendChild(el);
+      containerRef.current = el;
+    }
+    return () => {
+      if (containerRef.current) {
+        document.body.removeChild(containerRef.current);
+        containerRef.current = null;
+      }
+    };
+  }, []);
+
+  // Scroll lock
+  useEffect(() => {
+    if (!open) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [open]);
+
+  if (!mounted || !containerRef.current) return null;
+
+  const drawer = (
+    <div
+      className={`fixed inset-0 md:hidden transition-opacity duration-300 ${
+        open ? 'opacity-100 pointer-events-auto z-[100]' : 'opacity-0 pointer-events-none z-[100]'
+      }`}
+      aria-hidden={!open}
+    >
+      <div
+        className="absolute inset-0 bg-black/40 backdrop-blur-[2px]"
+        onClick={onClose}
+      />
+      <aside
+        className={`absolute top-0 right-0 h-full w-[86%] max-w-sm bg-white shadow-2xl transform-gpu transition-transform duration-300 ${
+          open ? 'translate-x-0' : 'translate-x-full'
+        }`}
+        style={{ willChange: 'transform', backfaceVisibility: 'hidden' }}
+      >
+        {children}
+      </aside>
+    </div>
+  );
+
+  return createPortal(drawer, containerRef.current);
+};
