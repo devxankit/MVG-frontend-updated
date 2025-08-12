@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { 
   FaSearch, 
@@ -29,10 +29,27 @@ const Header = () => {
   
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const location = useLocation();
   const { user, isAuthenticated } = useSelector((state) => state.auth);
   const { itemCount } = useSelector((state) => state.cart);
 
   const wishlistItems = useSelector((state) => state.wishlist.items);
+
+  // Helper function to check if a link is active
+  const isActiveLink = (path) => {
+    if (path === '/') {
+      return location.pathname === '/';
+    }
+    return location.pathname.startsWith(path);
+  };
+
+  // Helper function to get link styles based on active state
+  const getLinkStyles = (path) => {
+    const isActive = isActiveLink(path);
+    return isActive
+      ? 'px-3 py-1.5 rounded-lg bg-green-100 text-green-700 font-medium transition-colors duration-200'
+      : 'px-1.5 py-1 rounded transition-colors duration-200 hover:bg-primary-50 hover:text-primary-600 text-gray-700';
+  };
 
   // Outside click handled via overlay in MobileDrawer
 
@@ -112,13 +129,13 @@ const Header = () => {
                 style={{ maxHeight: '2.25rem' }} // matches md:text-xl
               />
             </Link>
-            <nav className="hidden md:flex items-center space-x-2 text-sm font-medium text-gray-700">
-              <Link to="/" className="px-1.5 py-1 rounded transition-colors duration-200 hover:bg-primary-50 hover:text-primary-600 focus:outline-none focus:ring-2 focus:ring-primary-200">Home</Link>
-              <Link to="/products" className="px-1.5 py-1 rounded transition-colors duration-200 hover:bg-primary-50 hover:text-primary-600">Products</Link>
-              <Link to="/categories" className="px-1.5 py-1 rounded transition-colors duration-200 hover:bg-primary-50 hover:text-primary-600">Categories</Link>
+            <nav className="hidden md:flex items-center space-x-2 text-sm font-medium">
+              <Link to="/" className={getLinkStyles('/')}>Home</Link>
+              <Link to="/products" className={getLinkStyles('/products')}>Products</Link>
+              <Link to="/categories" className={getLinkStyles('/categories')}>Categories</Link>
               {/* Conditionally render Become a Vendor */}
               {(!isAuthenticated || (user && user.role !== 'seller') || (user && user.role === 'admin')) && (
-                <Link to="/login" className="px-1.5 py-1 rounded transition-colors duration-200 hover:bg-primary-50 hover:text-primary-600">Become a Vendor</Link>
+                <Link to="/login" className="px-1.5 py-1 rounded transition-colors duration-200 hover:bg-primary-50 hover:text-primary-600 text-gray-700">Become a Vendor</Link>
               )}
             </nav>
           </div>
@@ -261,9 +278,9 @@ const Header = () => {
           </button>
         </div>
         <nav className="flex flex-col space-y-2 px-6 py-6 text-base font-medium flex-1 overflow-y-auto">
-          <Link to="/" className="nav-link px-2 py-2 rounded hover:bg-primary-50 hover:text-primary-600 transition-colors duration-200" onClick={() => setIsMenuOpen(false)}>Home</Link>
-          <Link to="/products" className="nav-link px-2 py-2 rounded hover:bg-primary-50 hover:text-primary-600 transition-colors duration-200" onClick={() => setIsMenuOpen(false)}>Products</Link>
-          <Link to="/categories" className="nav-link px-2 py-2 rounded hover:bg-primary-50 hover:text-primary-600 transition-colors duration-200" onClick={() => setIsMenuOpen(false)}>Categories</Link>
+          <Link to="/" className={`nav-link px-2 py-2 rounded transition-colors duration-200 ${isActiveLink('/') ? 'bg-green-100 text-green-700 font-medium' : 'hover:bg-primary-50 hover:text-primary-600'}`} onClick={() => setIsMenuOpen(false)}>Home</Link>
+          <Link to="/products" className={`nav-link px-2 py-2 rounded transition-colors duration-200 ${isActiveLink('/products') ? 'bg-green-100 text-green-700 font-medium' : 'hover:bg-primary-50 hover:text-primary-600'}`} onClick={() => setIsMenuOpen(false)}>Products</Link>
+          <Link to="/categories" className={`nav-link px-2 py-2 rounded transition-colors duration-200 ${isActiveLink('/categories') ? 'bg-green-100 text-green-700 font-medium' : 'hover:bg-primary-50 hover:text-primary-600'}`} onClick={() => setIsMenuOpen(false)}>Categories</Link>
           {(!isAuthenticated || (user && user.role !== 'seller') || (user && user.role === 'admin')) && (
             <Link to="/login" className="nav-link px-2 py-2 rounded hover:bg-primary-50 hover:text-primary-600 transition-colors duration-200" onClick={() => setIsMenuOpen(false)}>Become a Vendor</Link>
           )}
