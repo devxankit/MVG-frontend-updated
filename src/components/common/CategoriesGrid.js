@@ -10,19 +10,19 @@ const normalize = name =>
     .trim();
 
 const categoryImageMap = {
-  electronics: './images/electronics.jpeg',
-  homeandkitchen: './images/home and kitchen.jpeg',
-  beautyandpersonalcare: './images/beauty and personal care.jpeg',
-  clothingshoesandjewelry: './images/clothing shoose.jpeg',
-  sportsandoutdoors: './images/sport and outdoor.jpeg',
-  toysandgames: './images/toy and game.jpeg',
+  electronics: '/images/electronics.jpeg',
+  homeandkitchen: '/images/home and kitchen.jpeg',
+  beautyandpersonalcare: '/images/beauty and personal care.jpeg',
+  clothingshoesandjewelry: '/images/clothing shoose.jpeg',
+  sportsandoutdoors: '/images/sport and outdoor.jpeg',
+  toysandgames: '/images/toy and game.jpeg',
 };
 
 const CategoriesGrid = ({ categories, circular = false }) => (
   <div
     className={
       circular
-        ? "flex flex-wrap justify-center gap-12"
+        ? "categories-grid-2-mobile gap-4 sm:gap-6 md:flex md:flex-wrap md:justify-center md:gap-12"
         : "grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6"
     }
   >
@@ -37,7 +37,7 @@ const CategoriesGrid = ({ categories, circular = false }) => (
               className={[
                 "relative bg-gray-100 transition-colors overflow-hidden flex items-center justify-center",
                 circular
-                  ? "rounded-full aspect-square w-36 sm:w-40 md:w-44 lg:w-48 hover:bg-primary-50"
+                  ? "rounded-full aspect-square w-full max-w-[180px] sm:max-w-[200px] mx-auto md:w-44 lg:w-48 md:max-w-none hover:bg-primary-50"
                   : "rounded-lg p-6 text-center hover:bg-primary-50 h-48 flex-col justify-end"
               ].join(" ")}
             >
@@ -53,7 +53,7 @@ const CategoriesGrid = ({ categories, circular = false }) => (
                     e.target.src = '/default-category.png';
                   }
                 }}
-                className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 ease-in-out group-hover:scale-110 z-0"
+                className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 ease-in-out group-hover:scale-110 z-0 select-none"
                 style={{ filter: 'brightness(0.7)' }}
               />
               <div className={circular ? "relative z-10 text-center" : "relative z-10"}>

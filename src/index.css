@@ -331,3 +331,14 @@ code {
   transform: scale(0.98);
   opacity: 0.8;
 }
+
+/* Robust 2-col mobile grid for circular categories - prevents single column on very narrow devices */
+.categories-grid-2-mobile {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+@supports (grid-template-columns: subgrid) {
+  /* noop, future-proofing */
+}
