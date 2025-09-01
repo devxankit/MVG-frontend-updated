@@ -158,11 +158,15 @@ const SellerDashboard = () => {
   const [selectedSubCat, setSelectedSubCat] = useState('');
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [sellerPrice, setSellerPrice] = useState('');
+  const [sellerStock, setSellerStock] = useState('');
   const [listingError, setListingError] = useState('');
   const [showListingModal, setShowListingModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingListing, setEditingListing] = useState(null);
   const [editPrice, setEditPrice] = useState('');
+  const [showStockModal, setShowStockModal] = useState(false);
+  const [editingStock, setEditingStock] = useState(null);
+  const [editStock, setEditStock] = useState('');
   
   // Order management state
   const [orderRefreshInterval, setOrderRefreshInterval] = useState(null);
@@ -510,7 +514,7 @@ const SellerDashboard = () => {
     setListingLoading(true);
     setListingError('');
     try {
-      await productAPI.sellerListProduct(selectedProduct._id, sellerPrice);
+      await productAPI.sellerListProduct(selectedProduct._id, sellerPrice, sellerStock);
       // Refresh seller listings
       const res = await productAPI.sellerGetListings();
       setSellerListings(res.data);
@@ -519,6 +523,7 @@ const SellerDashboard = () => {
       setSelectedSubCat('');
       setSelectedProduct(null);
       setSellerPrice('');
+      setSellerStock('');
     } catch (err) {
       setListingError(err.response?.data?.message || 'Failed to list product');
     } finally {
@@ -552,8 +557,17 @@ const SellerDashboard = () => {
   const handleEditListing = (listing) => {
     setEditingListing(listing);
     setEditPrice(listing.sellerPrice.toString());
+    setEditStock(listing.sellerStock.toString());
     setEditError('');
     setShowEditModal(true);
+  };
+
+  // Handler for editing stock
+  const handleEditStock = (listing) => {
+    setEditingStock(listing);
+    setEditStock(listing.sellerStock.toString());
+    setEditError('');
+    setShowStockModal(true);
   };
 
   // Handler for saving edited listing
@@ -563,17 +577,48 @@ const SellerDashboard = () => {
       return;
     }
     
+    if (!editStock || editStock < 0) {
+      setEditError('Please enter a valid stock quantity');
+      return;
+    }
+    
     setEditLoading(true);
     setEditError('');
     try {
+      // Update both price and stock
       await productAPI.sellerUpdatePrice(editingListing._id, parseFloat(editPrice));
+      await productAPI.sellerUpdateStock(editingListing._id, parseFloat(editStock));
       const res = await productAPI.sellerGetListings();
       setSellerListings(res.data);
       setShowEditModal(false);
       setEditingListing(null);
       setEditPrice('');
+      setEditStock('');
     } catch (err) {
-      setEditError(err.response?.data?.message || 'Failed to update price');
+      setEditError(err.response?.data?.message || 'Failed to update product');
+    } finally {
+      setEditLoading(false);
+    }
+  };
+
+  // Handler for saving stock edit
+  const handleSaveStockEdit = async () => {
+    if (!editStock || editStock < 0) {
+      setEditError('Please enter a valid stock quantity');
+      return;
+    }
+    
+    setEditLoading(true);
+    setEditError('');
+    try {
+      await productAPI.sellerUpdateStock(editingStock._id, parseFloat(editStock));
+      const res = await productAPI.sellerGetListings();
+      setSellerListings(res.data);
+      setShowStockModal(false);
+      setEditingStock(null);
+      setEditStock('');
+    } catch (err) {
+      setEditError(err.response?.data?.message || 'Failed to update stock');
     } finally {
       setEditLoading(false);
     }
@@ -775,10 +820,11 @@ const SellerDashboard = () => {
               </div>
               {/* Listing Modal */}
               {showListingModal && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 transition-opacity duration-300 animate-fadeIn">
-                  <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-2xl mx-2 relative transition-transform duration-300 animate-slideUp">
-                    <button className="absolute top-2 right-2 text-gray-400 hover:text-gray-600 text-2xl" onClick={() => setShowListingModal(false)}>&times;</button>
-                    <h2 className="text-xl font-bold mb-4">List a New Product</h2>
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 transition-opacity duration-300 p-4" style={{animation: 'fadeIn 0.3s ease-out'}}>
+                  <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg mx-auto relative transition-transform duration-300 max-h-[90vh] overflow-y-auto" style={{animation: 'slideUp 0.3s ease-out'}}>
+                    <button className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-2xl z-10 bg-white rounded-full w-8 h-8 flex items-center justify-center shadow-sm" onClick={() => setShowListingModal(false)}>&times;</button>
+                    <div className="p-6">
+                      <h2 className="text-2xl font-bold mb-6 text-center text-gray-800">List a New Product</h2>
                     {/* Stepper for listing a product - only render current step */}
                     {step === 1 && (
                       <div className="mb-6">
@@ -846,12 +892,12 @@ const SellerDashboard = () => {
                             <button
                               key={product._id}
                               className={`flex items-center p-4 rounded border transition-colors duration-200 w-full ${selectedProduct && selectedProduct._id === product._id ? 'bg-blue-100 border-blue-600' : 'bg-gray-50 border-gray-200 hover:bg-blue-50'}`}
-                              onClick={() => { setSelectedProduct(product); setStep(4); setSellerPrice(product.price); }}
+                              onClick={() => { setSelectedProduct(product); setStep(4); setSellerPrice(product.price); setSellerStock(product.stock || 0); }}
                             >
                               <img src={product.images && product.images[0] ? product.images[0].url : '/product-images/default.webp'} alt={product.name} className="w-16 h-16 object-contain rounded mr-4 border" />
                               <div className="flex-1 text-left">
                                 <div className="font-semibold text-gray-800">{product.name}</div>
-                                <div className="text-xs text-gray-500">Default Price: {formatINR(product.price)}</div>
+                                <div className="text-xs text-gray-500">Default Price: {formatINR(product.price)}/{product.unit || 'KG'}</div>
                                 <div className="text-xs text-gray-500">Brand: {product.brand}</div>
                               </div>
                             </button>
@@ -863,41 +909,64 @@ const SellerDashboard = () => {
                       </div>
                     )}
                     {step === 4 && selectedProduct && (
-                      <div className="mb-6 max-w-md mx-auto bg-white rounded-lg shadow-lg p-6">
-                        <h4 className="font-semibold mb-4 text-lg">Step 4: Set Your Selling Price</h4>
+                      <div className="mb-6 max-w-lg mx-auto bg-white rounded-xl shadow-xl p-4 sm:p-6">
+                        <h4 className="font-semibold mb-4 text-lg text-center text-gray-800">Step 4: Set Your Price & Stock</h4>
                         
-                        <div className="flex items-center gap-4 mb-6 p-4 bg-gray-50 rounded-lg">
-                          <img src={selectedProduct.images && selectedProduct.images[0] ? selectedProduct.images[0].url : '/product-images/default.webp'} alt={selectedProduct.name} className="w-20 h-20 object-contain rounded-lg border" />
-                          <div>
-                            <div className="font-semibold text-gray-900 text-lg">{selectedProduct.name}</div>
-                            <div className="text-sm text-gray-600">{selectedProduct.brand || 'No Brand'}</div>
+                        <div className="flex items-center gap-3 mb-6 p-3 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg border border-blue-100">
+                          <img src={selectedProduct.images && selectedProduct.images[0] ? selectedProduct.images[0].url : '/product-images/default.webp'} alt={selectedProduct.name} className="w-12 h-12 object-contain rounded-lg border-2 border-white shadow-sm flex-shrink-0" />
+                          <div className="flex-1 min-w-0">
+                            <div className="font-semibold text-gray-900 text-base truncate">{selectedProduct.name}</div>
+                            <div className="text-xs text-gray-600">{selectedProduct.brand || 'No Brand'}</div>
                           </div>
                         </div>
                         
                         <div className="space-y-4">
-                          <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                            <span className="text-sm text-gray-600">Admin Suggested Price:</span>
-                            <span className="font-medium text-gray-900">{formatINR(selectedProduct.price)}</span>
+                          <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg border border-blue-200">
+                            <span className="text-sm font-medium text-blue-800">Admin Suggested Price:</span>
+                            <span className="font-bold text-blue-900 text-lg">{formatINR(selectedProduct.price)}/{selectedProduct.unit || 'KG'}</span>
                           </div>
                           
-                          <div className="space-y-2">
-                            <label className="block text-sm font-medium text-gray-700">Your Selling Price:</label>
-                        <input
-                          type="number"
-                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                              placeholder="Enter your competitive price"
-                          value={sellerPrice}
-                          min="0"
-                              step="0.01"
-                          onChange={e => setSellerPrice(e.target.value)}
-                        />
-                            <p className="text-xs text-gray-500">
-                              Set your own price to compete with other sellers. You can price higher or lower than the admin price.
-                            </p>
-                        </div>
+                          <div className="space-y-4">
+                            <div className="space-y-2">
+                              <label className="block text-sm font-semibold text-gray-700">Your Selling Price</label>
+                              <div className="relative">
+                                <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm">₹</span>
+                                <input
+                                  type="number"
+                                  className="w-full pl-8 pr-3 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-lg font-medium"
+                                  placeholder="0.00"
+                                  value={sellerPrice}
+                                  min="0"
+                                  step="0.01"
+                                  onChange={e => setSellerPrice(e.target.value)}
+                                />
+                              </div>
+                              <p className="text-xs text-gray-500">
+                                Set your competitive price
+                              </p>
+                            </div>
+                            
+                            <div className="space-y-2">
+                              <label className="block text-sm font-semibold text-gray-700">Your Stock Quantity</label>
+                              <div className="relative">
+                                <input
+                                  type="number"
+                                  className="w-full px-3 py-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-lg font-medium"
+                                  placeholder="0"
+                                  value={sellerStock}
+                                  min="0"
+                                  onChange={e => setSellerStock(e.target.value)}
+                                />
+                                <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm font-medium">{selectedProduct.unit || 'KG'}</span>
+                              </div>
+                              <p className="text-xs text-gray-500">
+                                Available quantity for sale
+                              </p>
+                            </div>
+                          </div>
                           
                           {sellerPrice && (
-                            <div className={`p-3 rounded-lg text-sm font-medium ${
+                            <div className={`p-3 rounded-lg text-sm font-semibold text-center ${
                               parseFloat(sellerPrice) > selectedProduct.price
                                 ? 'bg-green-50 text-green-700 border border-green-200'
                                 : parseFloat(sellerPrice) < selectedProduct.price
@@ -905,14 +974,14 @@ const SellerDashboard = () => {
                                 : 'bg-blue-50 text-blue-700 border border-blue-200'
                             }`}>
                               {parseFloat(sellerPrice) > selectedProduct.price ? (
-                                <span>Price Premium: +{formatINR(parseFloat(sellerPrice) - selectedProduct.price)}</span>
+                                <span>📈 Premium: +{formatINR(parseFloat(sellerPrice) - selectedProduct.price)}</span>
                               ) : parseFloat(sellerPrice) < selectedProduct.price ? (
-                                <span>Price Discount: -{formatINR(selectedProduct.price - parseFloat(sellerPrice))}</span>
+                                <span>📉 Discount: -{formatINR(selectedProduct.price - parseFloat(sellerPrice))}</span>
                               ) : (
-                                <span>Same as Admin Price</span>
+                                <span>⚖️ Same as Admin Price</span>
                               )}
-                      </div>
-                    )}
+                            </div>
+                          )}
                   </div>
                         
                         {listingError && (
@@ -921,17 +990,17 @@ const SellerDashboard = () => {
                 </div>
               )}
                         
-                        <div className="flex gap-3 justify-end mt-6">
+                        <div className="flex gap-3 mt-6">
                           <button 
-                            className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors" 
+                            className="flex-1 px-4 py-3 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors font-medium" 
                             onClick={() => setStep(3)}
                           >
-                            Back
+                            ← Back
                           </button>
                           <button 
-                            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2" 
+                            className="flex-1 px-4 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center gap-2 font-semibold shadow-lg" 
                             onClick={async () => { await handleListProduct(); setShowListingModal(false); }} 
-                            disabled={listingLoading || !sellerPrice || parseFloat(sellerPrice) <= 0}
+                            disabled={listingLoading || !sellerPrice || parseFloat(sellerPrice) <= 0 || !sellerStock || parseFloat(sellerStock) < 0}
                           >
                             {listingLoading ? (
                               <>
@@ -942,12 +1011,13 @@ const SellerDashboard = () => {
                                 Listing...
                               </>
                             ) : (
-                              'List Product'
+                              '🚀 List Product'
                             )}
                           </button>
                         </div>
                       </div>
                     )}
+                    </div>
                   </div>
                 </div>
               )}
@@ -957,7 +1027,7 @@ const SellerDashboard = () => {
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
                   <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md mx-4">
                     <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-lg font-semibold text-gray-900">Update Product Price</h3>
+                      <h3 className="text-lg font-semibold text-gray-900">Update Product Price & Stock</h3>
                       <button 
                         className="text-gray-400 hover:text-gray-600 text-xl" 
                         onClick={() => setShowEditModal(false)}
@@ -982,7 +1052,7 @@ const SellerDashboard = () => {
                       <div className="space-y-3">
                         <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                           <span className="text-sm text-gray-600">Admin Price:</span>
-                          <span className="font-medium text-gray-900">{formatINR(editingListing.product.price)}</span>
+                          <span className="font-medium text-gray-900">{formatINR(editingListing.product.price)}/{editingListing.product.unit || 'KG'}</span>
                         </div>
                         
                         <div className="space-y-2">
@@ -998,6 +1068,21 @@ const SellerDashboard = () => {
                           />
                           <p className="text-xs text-gray-500">
                             Set your own price to compete with other sellers
+                          </p>
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <label className="block text-sm font-medium text-gray-700">Your Stock Quantity:</label>
+                          <input
+                            type="number"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            placeholder="Enter your stock quantity"
+                            value={editStock}
+                            min="0"
+                            onChange={(e) => setEditStock(e.target.value)}
+                          />
+                          <p className="text-xs text-gray-500">
+                            Set the quantity you have available for sale
                           </p>
                         </div>
                         
@@ -1049,7 +1134,93 @@ const SellerDashboard = () => {
                             Updating...
                           </>
                         ) : (
-                          'Update Price'
+                          'Update Price & Stock'
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Edit Stock Modal */}
+              {showStockModal && editingStock && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
+                  <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md mx-4">
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-lg font-semibold text-gray-900">Update Stock Quantity</h3>
+                      <button 
+                        className="text-gray-400 hover:text-gray-600 text-xl" 
+                        onClick={() => setShowStockModal(false)}
+                      >
+                        ×
+                      </button>
+                    </div>
+                    
+                    <div className="mb-6">
+                      <div className="flex items-center gap-4 mb-4">
+                        <img 
+                          src={editingStock.product.images && editingStock.product.images[0] ? editingStock.product.images[0].url : '/product-images/default.webp'} 
+                          alt={editingStock.product.name} 
+                          className="w-16 h-16 object-contain rounded-lg border" 
+                        />
+                        <div>
+                          <h4 className="font-semibold text-gray-900">{editingStock.product.name}</h4>
+                          <p className="text-sm text-gray-600">{editingStock.product.brand || 'No Brand'}</p>
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                          <span className="text-sm text-gray-600">Current Stock:</span>
+                          <span className="font-medium text-gray-900">{editingStock.sellerStock || 0} {editingStock.unit || editingStock.product.unit || 'KG'}</span>
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <label className="block text-sm font-medium text-gray-700">New Stock Quantity:</label>
+                          <input
+                            type="number"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            placeholder="Enter new stock quantity"
+                            value={editStock}
+                            min="0"
+                            onChange={(e) => setEditStock(e.target.value)}
+                          />
+                          <p className="text-xs text-gray-500">
+                            Set the quantity you have available for sale
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {editError && (
+                      <div className="mb-4 p-3 bg-red-50 text-red-700 rounded-lg text-sm">
+                        {editError}
+                      </div>
+                    )}
+                    
+                    <div className="flex gap-3 justify-end">
+                      <button
+                        className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                        onClick={() => setShowStockModal(false)}
+                        disabled={editLoading}
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
+                        onClick={handleSaveStockEdit}
+                        disabled={editLoading || !editStock || parseFloat(editStock) < 0}
+                      >
+                        {editLoading ? (
+                          <>
+                            <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"></circle>
+                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            Updating...
+                          </>
+                        ) : (
+                          'Update Stock'
                         )}
                       </button>
                     </div>
@@ -1092,10 +1263,11 @@ const SellerDashboard = () => {
                                   <button 
                                     className="text-blue-600 hover:text-blue-800 p-2 rounded-full hover:bg-blue-50 transition-colors" 
                                     onClick={() => handleEditListing(listing)}
-                                    title="Edit Price"
+                                    title="Edit Price & Stock"
                                   >
                                     <FaEdit className="w-4 h-4" />
                                   </button>
+
                                   <button 
                                     className="text-red-600 hover:text-red-800 p-2 rounded-full hover:bg-red-50 transition-colors" 
                                     onClick={() => handleUnlist(listing._id)} 
@@ -1111,12 +1283,19 @@ const SellerDashboard = () => {
                                 {/* Price Comparison */}
                                 <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                                   <div className="text-sm text-gray-600">Admin Price:</div>
-                                  <div className="font-medium text-gray-900">{formatINR(listing.product.price)}</div>
+                                  <div className="font-medium text-gray-900">{formatINR(listing.product.price)}/{listing.product.unit || 'KG'}</div>
                                 </div>
                                 
                                 <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg border border-blue-200">
                                   <div className="text-sm text-blue-700 font-medium">Your Price:</div>
-                                  <div className="font-bold text-blue-900 text-lg">{formatINR(listing.sellerPrice)}</div>
+                                  <div className="font-bold text-blue-900 text-lg">{formatINR(listing.sellerPrice)}/{listing.unit || listing.product.unit || 'KG'}</div>
+                                </div>
+                                
+                                <div className="flex items-center justify-between p-3 bg-purple-50 rounded-lg border border-purple-200">
+                                  <div className="text-sm text-purple-700 font-medium">Your Stock:</div>
+                                  <div className="font-bold text-purple-900 text-lg">
+                                    {listing.sellerStock || 0} {listing.unit || listing.product.unit || 'KG'}
+                                  </div>
                                 </div>
                                 
                                 {/* Price Difference Indicator */}

@@ -18,6 +18,7 @@ const ProductCard = ({
 
   // Use seller price if available, otherwise use product price
   const displayPrice = product?.sellerPrice ?? product.price;
+  const displayUnit = product?.unit || 'KG'; // Default to KG if no unit
   const discountPercentage = product.comparePrice && product.comparePrice > displayPrice 
     ? Math.round(((product.comparePrice - displayPrice) / product.comparePrice) * 100)
     : 0;
@@ -83,11 +84,11 @@ const ProductCard = ({
             {showPrice && (
               <div className="flex items-center gap-2">
                 <span className="text-white font-bold text-base">
-                  ₹{displayPrice}
+                  ₹{displayPrice}/{displayUnit}
                 </span>
                 {product.comparePrice && product.comparePrice > displayPrice && (
                   <span className="text-gray-300 text-xs line-through">
-                    ₹{product.comparePrice}
+                    ₹{product.comparePrice}/{displayUnit}
                   </span>
                 )}
               </div>

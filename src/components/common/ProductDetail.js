@@ -17,7 +17,7 @@ const ProductDetail = ({ product, onAddToCart, onWishlist, onShare }) => {
   const [currentVariantData, setCurrentVariantData] = useState({
     price: product?.price || 0,
     comparePrice: product?.comparePrice || 0,
-    stock: product?.stock || 0,
+    stock: product?.sellerStock !== undefined ? product.sellerStock : (product?.stock || 0),
     images: product?.images || []
   });
   const [reviews, setReviews] = useState([]);
@@ -33,7 +33,7 @@ const ProductDetail = ({ product, onAddToCart, onWishlist, onShare }) => {
   const navigate = useNavigate();
 
   const handleQuantityChange = (newQuantity) => {
-    const maxStock = currentVariantData.stock || product.stock || 1;
+    const maxStock = currentVariantData.stock || (product?.sellerStock !== undefined ? product.sellerStock : product?.stock) || 1;
     if (newQuantity >= 1 && newQuantity <= maxStock) {
       setQuantity(newQuantity);
     }
@@ -70,7 +70,7 @@ const ProductDetail = ({ product, onAddToCart, onWishlist, onShare }) => {
         setCurrentVariantData({
           price: product.price,
           comparePrice: product.comparePrice || 0,
-          stock: product.stock,
+          stock: product?.sellerStock !== undefined ? product.sellerStock : (product?.stock || 0),
           images: product.images || []
         });
       }
@@ -301,9 +301,13 @@ const ProductDetail = ({ product, onAddToCart, onWishlist, onShare }) => {
             </div>
 
             <div className="flex items-end gap-3">
-              <span className="text-3xl font-bold text-green-600">{formatINR(currentVariantData.price)}</span>
+              <span className="text-3xl font-bold text-green-600">
+                {formatINR(currentVariantData.price)}/{product?.unit || 'KG'}
+              </span>
               {currentVariantData.comparePrice > currentVariantData.price && (
-                <span className="text-lg text-gray-500 line-through">{formatINR(currentVariantData.comparePrice)}</span>
+                <span className="text-lg text-gray-500 line-through">
+                  {formatINR(currentVariantData.comparePrice)}/{product?.unit || 'KG'}
+                </span>
               )}
               {currentVariantData.comparePrice > currentVariantData.price && (
                 <span className="bg-red-100 text-red-700 px-2 py-0.5 rounded text-xs font-semibold">{Math.round(((currentVariantData.comparePrice - currentVariantData.price) / currentVariantData.comparePrice) * 100)}% OFF</span>
@@ -312,7 +316,9 @@ const ProductDetail = ({ product, onAddToCart, onWishlist, onShare }) => {
 
             <div className="flex flex-wrap items-center gap-2">
               {currentVariantData.stock > 0 ? (
-                <span className="px-2 py-0.5 rounded-full border border-green-300 text-green-700 text-xs">In Stock ({currentVariantData.stock} available)</span>
+                <span className="px-2 py-0.5 rounded-full border border-green-300 text-green-700 text-xs">
+                  In Stock ({currentVariantData.stock} {product?.unit || 'KG'} available)
+                </span>
               ) : (
                 <span className="px-2 py-0.5 rounded-full border border-red-300 text-red-700 text-xs">Out of Stock</span>
               )}

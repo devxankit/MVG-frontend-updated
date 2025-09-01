@@ -32,7 +32,8 @@ const ProductDetailPage = () => {
   }, [id]);
 
   const handleQuantityChange = (newQuantity) => {
-    if (newQuantity >= 1 && newQuantity <= (product?.stock || 1)) {
+    const maxStock = product?.sellerStock !== undefined ? product.sellerStock : (product?.stock || 1);
+    if (newQuantity >= 1 && newQuantity <= maxStock) {
       setQuantity(newQuantity);
     }
   };

@@ -21,7 +21,7 @@ const VariantSelector = ({
     if (!product?.variants || product.variants.length === 0) {
       setCurrentPrice(product?.price || 0);
       setCurrentComparePrice(product?.comparePrice || 0);
-      setCurrentStock(product?.stock || 0);
+      setCurrentStock(product?.sellerStock !== undefined ? product.sellerStock : (product?.stock || 0));
       setCurrentImages(product?.images || []);
       return;
     }
@@ -51,7 +51,7 @@ const VariantSelector = ({
       // Use base product values
       setCurrentPrice(product.price);
       setCurrentComparePrice(product.comparePrice || 0);
-      setCurrentStock(product.stock);
+      setCurrentStock(product?.sellerStock !== undefined ? product.sellerStock : (product?.stock || 0));
       setCurrentImages(product.images || []);
     }
   }, [selectedVariants, product]);

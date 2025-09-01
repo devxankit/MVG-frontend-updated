@@ -184,8 +184,9 @@ const productAPI = {
     return axiosInstance.patch(`/products/${productId}/unrecommend`);
   },
 
-  sellerListProduct: (productId, sellerPrice) => axiosInstance.post('/products/seller/list', { productId, sellerPrice }),
+  sellerListProduct: (productId, sellerPrice, sellerStock) => axiosInstance.post('/products/seller/list', { productId, sellerPrice, sellerStock }),
   sellerUpdatePrice: (sellerProductId, sellerPrice) => axiosInstance.put('/products/seller/price', { sellerProductId, sellerPrice }),
+  sellerUpdateStock: (sellerProductId, stock) => axiosInstance.put('/products/seller/stock', { sellerProductId, stock }),
   sellerUnlistProduct: (sellerProductId) => axiosInstance.put('/products/seller/unlist', { sellerProductId }),
   sellerGetListings: () => axiosInstance.get('/products/seller/listings'),
   adminGetAllSellerListings: () => axiosInstance.get('/products/admin/seller-listings'),

@@ -298,7 +298,25 @@ const [imageUploadProgress, setImageUploadProgress] = useState(0);
   };
   // Edit product
   const handleEdit = (product) => {
-    setEditForm({ ...product, price: product.price || '', stock: product.stock || '' });
+    console.log('Editing product:', product); // Debug log
+    const formData = {
+      name: product.name || '',
+      description: product.description || product.shortDescription || '',
+      productDescription: product.productDescription || product.description || '',
+      price: product.price || '',
+      comparePrice: product.comparePrice || '',
+      stock: product.stock || '',
+      brand: product.brand || '',
+      sku: product.sku || '',
+      unit: product.unit || 'KG',
+      category: product.category?._id || product.category || '',
+      subCategory: product.subCategory?._id || product.subCategory || '',
+      features: Array.isArray(product.features) ? product.features.join(', ') : (product.features || ''),
+      tags: Array.isArray(product.tags) ? product.tags.join(', ') : (product.tags || ''),
+      imageFiles: []
+    };
+    console.log('Form data:', formData); // Debug log
+    setEditForm(formData);
     setEditModal({ open: true, product });
     setEditError('');
   };
@@ -310,6 +328,7 @@ const [imageUploadProgress, setImageUploadProgress] = useState(0);
       const res = await productAPI.editProduct(editModal.product._id, editForm);
       setProducts(products.map(p => p._id === editModal.product._id ? res.data : p));
       setEditModal({ open: false, product: null });
+      setEditForm({});
     } catch (err) {
       setEditError(err.response?.data?.message || 'Failed to update product');
     } finally {
@@ -502,6 +521,7 @@ const [imageUploadProgress, setImageUploadProgress] = useState(0);
       formData.append('stock', String(Number(addProductForm.stock)));
       formData.append('brand', addProductForm.brand);
       formData.append('sku', addProductForm.sku);
+      formData.append('unit', addProductForm.unit || 'KG');
       formData.append('category', addProductForm.category);
       formData.append('subCategory', addProductForm.subCategory);
       if (addProductForm.features) formData.append('features', addProductForm.features);
@@ -1801,6 +1821,20 @@ const [imageUploadProgress, setImageUploadProgress] = useState(0);
                       required
                     />
                   </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Unit *
+                    </label>
+                    <select
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      value={addProductForm.unit || 'KG'}
+                      onChange={e => setAddProductForm({ ...addProductForm, unit: e.target.value })}
+                      required
+                    >
+                      <option value="KG">KG (Kilogram)</option>
+                      <option value="Liter">Liter</option>
+                    </select>
+                  </div>
                 </div>
               </div>
 
@@ -2006,7 +2040,10 @@ const [imageUploadProgress, setImageUploadProgress] = useState(0);
       {editModal.open && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
           <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto p-6">
-            <button className="absolute top-2 right-2 text-gray-400 hover:text-gray-600" onClick={() => setEditModal({ open: false, product: null })}>&times;</button>
+            <button className="absolute top-2 right-2 text-gray-400 hover:text-gray-600" onClick={() => {
+              setEditModal({ open: false, product: null });
+              setEditForm({});
+            }}>&times;</button>
             <h2 className="text-2xl font-bold mb-4">Edit Product</h2>
             {editError && <div className="mb-4 p-2 bg-red-100 text-red-700 rounded">{editError}</div>}
             <form onSubmit={handleEditSubmit} className="space-y-6">
@@ -2040,6 +2077,18 @@ const [imageUploadProgress, setImageUploadProgress] = useState(0);
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Stock Quantity *</label>
                     <input type="number" min="0" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" value={editForm.stock || ''} onChange={e => setEditForm({ ...editForm, stock: e.target.value })} required />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Unit *</label>
+                    <select
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      value={editForm.unit || 'KG'}
+                      onChange={e => setEditForm({ ...editForm, unit: e.target.value })}
+                      required
+                    >
+                      <option value="KG">KG (Kilogram)</option>
+                      <option value="Liter">Liter</option>
+                    </select>
                   </div>
                 </div>
               </div>
