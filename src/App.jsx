@@ -31,8 +31,9 @@ function App() {
   const [toastVisible, setToastVisible] = React.useState(false);
   const [toastMessage, setToastMessage] = React.useState('');
 
-  // Check if current route is admin route
+  // Check if current route is admin or seller route
   const isAdminRoute = location.pathname.startsWith('/admin');
+  const isSellerRoute = location.pathname.startsWith('/seller');
 
   // Example product names for dynamic messages
   const productNames = [
@@ -137,8 +138,8 @@ function App() {
             <Route path="/categories" element={<Categories />} />
           </Routes>
         </main>
-        {/* Only show footer on non-admin routes */}
-        {!isAdminRoute && <Footer />}
+        {/* Only show footer on non-admin and non-seller routes */}
+        {!isAdminRoute && !isSellerRoute && <Footer />}
       </div>
     </>
   );
