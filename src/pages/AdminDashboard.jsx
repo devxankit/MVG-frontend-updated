@@ -3,7 +3,9 @@ import { FaUsers, FaBox, FaDollarSign, FaChartLine, FaStore, FaSignOutAlt, FaHom
 import { formatINR } from '../utils/formatCurrency';
 import axiosInstance from '../api/axiosConfig';
 import { useDispatch } from 'react-redux';
+import { logout } from '../redux/slices/authSlice';
 import { toast } from 'react-toastify';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '../components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
 import { Badge } from '../components/ui/Badge';
@@ -38,6 +40,7 @@ const AdminDashboard = () => {
   const [isLoading, setIsLoading] = useState(true);
 
   const dispatch = useDispatch();
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchStats();
@@ -88,9 +91,15 @@ const AdminDashboard = () => {
     { id: 'wallet', label: 'Wallet', icon: FaWallet },
   ];
 
-  const handleLogout = () => {
-    // Handle logout logic
-    toast.success('Logged out successfully');
+  const handleLogout = async () => {
+    try {
+      await dispatch(logout()).unwrap();
+      toast.success('Logged out successfully');
+      navigate('/login');
+    } catch (error) {
+      console.error('Logout error:', error);
+      toast.error('Failed to logout');
+    }
   };
 
   const handleTabChange = (tabId) => {

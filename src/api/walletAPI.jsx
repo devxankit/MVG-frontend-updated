@@ -42,5 +42,9 @@ export const adminWalletAPI = {
   
   // Mark withdrawal as processed
   processWithdrawal: (id, transactionId) => 
-    axios.put(`/wallet/admin/withdrawals/${id}/process`, { transactionId })
+    axios.put(`/wallet/admin/withdrawals/${id}/process`, { transactionId }),
+  
+  // Get seller transaction history (Admin)
+  getSellerTransactions: (sellerId) => 
+    axios.get(`/wallet/admin/seller/${sellerId}/transactions`)
 };

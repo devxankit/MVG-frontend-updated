@@ -103,14 +103,11 @@ const AdminWithdrawalManagement = () => {
   const getActionButtons = (withdrawal) => {
     if (withdrawal.status === 'pending') {
       return (
-        <div className="flex gap-2">
+        <div className="space-y-2">
           <Button
             size="sm"
             onClick={() => handleAction(withdrawal, 'approve')}
-            className="
-              bg-green-600 hover:bg-green-700 text-white font-medium px-3 py-2 rounded-md
-              transition-colors duration-200 focus:ring-2 focus:ring-green-300 focus:ring-offset-2
-            "
+            className="w-full bg-green-600 hover:bg-green-700 text-white font-medium px-3 py-2 rounded-md transition-colors duration-200 focus:ring-2 focus:ring-green-300 focus:ring-offset-2"
           >
             <FaCheck className="w-4 h-4 mr-2" />
             Approve
@@ -118,10 +115,7 @@ const AdminWithdrawalManagement = () => {
           <Button
             size="sm"
             onClick={() => handleAction(withdrawal, 'reject')}
-            className="
-              bg-red-600 hover:bg-red-700 text-white font-medium px-3 py-2 rounded-md
-              transition-colors duration-200 focus:ring-2 focus:ring-red-300 focus:ring-offset-2
-            "
+            className="w-full bg-red-600 hover:bg-red-700 text-white font-medium px-3 py-2 rounded-md transition-colors duration-200 focus:ring-2 focus:ring-red-300 focus:ring-offset-2"
           >
             <FaTimes className="w-4 h-4 mr-2" />
             Reject
@@ -133,10 +127,7 @@ const AdminWithdrawalManagement = () => {
         <Button
           size="sm"
           onClick={() => handleAction(withdrawal, 'process')}
-          className="
-            bg-blue-600 hover:bg-blue-700 text-white font-medium px-3 py-2 rounded-md
-            transition-colors duration-200 focus:ring-2 focus:ring-blue-300 focus:ring-offset-2
-          "
+          className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium px-3 py-2 rounded-md transition-colors duration-200 focus:ring-2 focus:ring-blue-300 focus:ring-offset-2"
         >
           <FaCheck className="w-4 h-4 mr-2" />
           Mark Processed
@@ -330,14 +321,11 @@ const AdminWithdrawalManagement = () => {
                           </div>
 
                           {/* Action Buttons */}
-                          <div className="flex justify-center gap-2 mt-auto">
+                          <div className="space-y-2 mt-auto">
                             <Button
                               size="sm"
                               onClick={() => handleViewDetails(withdrawal)}
-                              className="
-                                bg-gray-600 hover:bg-gray-700 text-white font-medium px-3 py-2 rounded-md
-                                transition-colors duration-200 focus:ring-2 focus:ring-gray-300 focus:ring-offset-2
-                              "
+                              className="w-full bg-gray-600 hover:bg-gray-700 text-white font-medium px-3 py-2 rounded-md transition-colors duration-200 focus:ring-2 focus:ring-gray-300 focus:ring-offset-2"
                             >
                               <FaEye className="w-4 h-4 mr-2" />
                               View Details

@@ -5,7 +5,9 @@ import sellerAPI from '../api/sellerAPI';
 import axiosInstance from '../api/axiosConfig';
 import { useSelector, useDispatch } from 'react-redux';
 import { fetchOrders } from '../redux/slices/orderSlice';
+import { logout } from '../redux/slices/authSlice';
 import { toast } from 'react-toastify';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '../components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
 import { Badge } from '../components/ui/Badge';
@@ -36,6 +38,7 @@ const SellerDashboard = () => {
   const [isLoading, setIsLoading] = useState(true);
 
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const { orders, loading: ordersLoading } = useSelector((state) => state.orders);
 
   useEffect(() => {
@@ -95,9 +98,15 @@ const SellerDashboard = () => {
     { id: 'wallet', label: 'Wallet', icon: FaWallet },
   ];
 
-  const handleLogout = () => {
-    // Handle logout logic
-    toast.success('Logged out successfully');
+  const handleLogout = async () => {
+    try {
+      await dispatch(logout()).unwrap();
+      toast.success('Logged out successfully');
+      navigate('/login');
+    } catch (error) {
+      console.error('Logout error:', error);
+      toast.error('Failed to logout');
+    }
   };
 
   const handleTabChange = (tabId) => {
