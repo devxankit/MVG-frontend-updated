@@ -1,4 +1,4 @@
-import axiosInstance from './axiosConfig';
+import axiosInstance from './axiosConfig.jsx';
 
 const authAPI = {
   // Register new user

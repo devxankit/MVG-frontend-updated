@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import productAPI from '../../api/productAPI';
-import ProductCard from './ProductCard';
+import productAPI from '../../api/productAPI.jsx';
+import ProductCard from './ProductCard.jsx';
 
 const RelatedProducts = ({ currentProduct, title = 'Related products' }) => {
   const [related, setRelated] = useState([]);

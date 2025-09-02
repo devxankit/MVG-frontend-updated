@@ -1,4 +1,4 @@
-import axiosInstance from './axiosConfig';
+import axiosInstance from './axiosConfig.jsx';
 
 const sellerAPI = {
   // Get all sellers (with approval status)

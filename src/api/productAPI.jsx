@@ -1,4 +1,4 @@
-import axiosInstance from './axiosConfig';
+import axiosInstance from './axiosConfig.jsx';
 
 const productAPI = {
   // Get all products with filters

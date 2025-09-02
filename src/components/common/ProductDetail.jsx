@@ -5,10 +5,10 @@ import * as Tabs from '@radix-ui/react-tabs';
 import * as Accordion from '@radix-ui/react-accordion';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import { HeartIcon, Share2Icon, ChatBubbleIcon, StarFilledIcon, CheckCircledIcon, ChevronDownIcon } from '@radix-ui/react-icons';
-import { formatINR } from '../../utils/formatCurrency';
-import productAPI from '../../api/productAPI';
-import VariantSelector from './VariantSelector';
-import RelatedProducts from './RelatedProducts';
+import { formatINR } from '../../utils/formatCurrency.jsx';
+import productAPI from '../../api/productAPI.jsx';
+import VariantSelector from './VariantSelector.jsx';
+import RelatedProducts from './RelatedProducts.jsx';
 
 const ProductDetail = ({ product, onAddToCart, onWishlist, onShare }) => {
   const [quantity, setQuantity] = useState(1);

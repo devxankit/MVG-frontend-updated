@@ -1,4 +1,4 @@
-import axios from './axiosConfig';
+import axios from './axiosConfig.jsx';
 
 // Seller wallet API calls
 export const sellerWalletAPI = {

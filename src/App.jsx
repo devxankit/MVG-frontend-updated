@@ -1,28 +1,28 @@
 import React, { useEffect } from 'react';
 import { Routes, Route, useLocation } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import Header from './components/common/Header';
-import Footer from './components/common/Footer';
-import Home from './pages/Home';
-import Login from './pages/Login';
-import Register from './pages/Register';
-import ProductList from './pages/ProductList';
-import ProductDetail from './pages/ProductDetail';
-import Cart from './pages/Cart';
-import Checkout from './pages/Checkout';
-import Profile from './pages/Profile';
-import SellerDashboard from './pages/SellerDashboard';
-import AdminDashboard from './pages/AdminDashboard';
-import ProtectedRoute from './components/common/ProtectedRoute';
+import Header from './components/common/Header.jsx';
+import Footer from './components/common/Footer.jsx';
+import Home from './pages/Home.jsx';
+import Login from './pages/Login.jsx';
+import Register from './pages/Register.jsx';
+import ProductList from './pages/ProductList.jsx';
+import ProductDetail from './pages/ProductDetail.jsx';
+import Cart from './pages/Cart.jsx';
+import Checkout from './pages/Checkout.jsx';
+import Profile from './pages/Profile.jsx';
+import SellerDashboard from './pages/SellerDashboard.jsx';
+import AdminDashboard from './pages/AdminDashboard.jsx';
+import ProtectedRoute from './components/common/ProtectedRoute.jsx';
 
-import { getCurrentUser } from './redux/slices/authSlice';
-import Wishlist from './pages/Wishlist';
-import { fetchCart } from './redux/slices/cartSlice';
-import Categories from './pages/Categories';
+import { getCurrentUser } from './redux/slices/authSlice.jsx';
+import Wishlist from './pages/Wishlist.jsx';
+import { fetchCart } from './redux/slices/cartSlice.jsx';
+import Categories from './pages/Categories.jsx';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import Toast from './components/common/Toast';
-import ScrollToTop from './components/common/ScrollToTop';
+import Toast from './components/common/Toast.jsx';
+import ScrollToTop from './components/common/ScrollToTop.jsx';
 
 function App() {
   const dispatch = useDispatch();
@@ -30,6 +30,9 @@ function App() {
   const location = useLocation();
   const [toastVisible, setToastVisible] = React.useState(false);
   const [toastMessage, setToastMessage] = React.useState('');
+
+  // Check if current route is admin route
+  const isAdminRoute = location.pathname.startsWith('/admin');
 
   // Example product names for dynamic messages
   const productNames = [
@@ -134,7 +137,8 @@ function App() {
             <Route path="/categories" element={<Categories />} />
           </Routes>
         </main>
-        <Footer />
+        {/* Only show footer on non-admin routes */}
+        {!isAdminRoute && <Footer />}
       </div>
     </>
   );
