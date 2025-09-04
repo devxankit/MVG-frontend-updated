@@ -6,6 +6,7 @@ import { Pagination } from 'swiper';
 import 'swiper/css';
 import 'swiper/css/pagination';
 
+
 import { 
   FaArrowRight, 
   FaStar, 
@@ -25,6 +26,8 @@ import HeroCarousel from '../components/common/HeroCarousel';
 import EventBanner from '../components/common/EventBanner';
 import ProductCard from '../components/common/ProductCard';
 import { fetchWishlist, addToWishlist, removeFromWishlist } from '../redux/slices/wishlistSlice';
+import FoodCardsLayout from '../components/common/FoodCardsLayout ';
+import DeliveryBanner from '../components/common/DeliveryBanner';
 
 const Home = () => {
   const dispatch = useDispatch();
@@ -290,8 +293,9 @@ const Home = () => {
         </div>
       </section>
 
+   <FoodCardsLayout/>
+  
    
-    
 
       {/* Products You Might Like Section */}
       <section className="py-16">
@@ -323,6 +327,8 @@ const Home = () => {
           </div>
         </div>
       </section>
+
+      <DeliveryBanner/>    
 
       {/* CTA Section */}
       <section className="py-16 bg-primary-600 text-white">
