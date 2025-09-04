@@ -6,6 +6,9 @@ import { Pagination } from 'swiper';
 import 'swiper/css';
 import 'swiper/css/pagination';
 
+import AOS from 'aos';
+import 'aos/dist/aos.css';
+
 
 import { 
   FaArrowRight, 
@@ -142,6 +145,14 @@ const Home = () => {
     }).catch(() => setListedProducts([]));
   }, []);
 
+
+  useEffect(() => {
+    AOS.init({
+      duration: 800, // animation duration in ms
+      once: true,    // only animate once
+    });
+  }, []);
+
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
@@ -149,10 +160,10 @@ const Home = () => {
 
 
       {/* Categories Section */}
-      <section className="py-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center mb-12">
-            <h2 className="text-3xl font-bold text-center w-full md:w-auto">Shop by Category</h2>
+      <section className="py-16" data-aos="fade-up">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8" data-aos="fade-up">
+          <div className="flex justify-between items-center mb-12" data-aos="fade-up">
+            <h2 className="text-3xl font-bold text-center w-full md:w-auto" data-aos="fade-up">Shop by Category</h2>
             <Link
               to="/categories"
               className="hidden md:flex items-center text-primary-600 hover:text-primary-700 font-semibold ml-4"
@@ -162,7 +173,7 @@ const Home = () => {
             </Link>
           </div>
           <CategoriesGrid categories={mainCategories} circular />
-          <div className="flex justify-center mt-8 md:hidden">
+          <div className="flex justify-center mt-8 md:hidden" data-aos="fade-up">
             <Link
               to="/categories"
               className="flex items-center text-green-600 hover:text-green-700 font-semibold text-lg"
@@ -174,12 +185,12 @@ const Home = () => {
       </section>
 
         {/* Features Section */}
-      <section className="py-0 bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section className="py-0 bg-gray-50" data-aos="fade-up">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8" data-aos="fade-up">
           {/* Desktop Grid Layout */}
-          <div className="hidden md:grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="hidden md:grid md:grid-cols-2 lg:grid-cols-4 gap-8" data-aos="fade-up">
             {features.map((feature, index) => (
-              <div key={index} className="text-center">
+              <div key={index} className="text-center" data-aos="fade-up">
                 <div className="text-primary-600 mb-4 flex justify-center">
                   {feature.icon}
                 </div>
@@ -190,7 +201,7 @@ const Home = () => {
           </div>
 
           {/* Mobile Carousel Layout */}
-          <div className="md:hidden ">
+          <div className="md:hidden " data-aos="fade-up" >
             <Swiper
               modules={[Pagination]}
               spaceBetween={12}
@@ -204,7 +215,7 @@ const Home = () => {
               className="features-swiper"
             >
               {features.map((feature, index) => (
-                <SwiperSlide key={index}>
+                <SwiperSlide key={index} data-aos="fade-up">
                   <div className="text-center bg-white rounded-xl p-2 shadow-lg border border-gray-200 mx-2">
                     <div className="text-primary-600 mb-3 flex justify-center">
                       <div className="text-2xl">
@@ -222,10 +233,10 @@ const Home = () => {
       </section>
 
       {/* Featured Products Section */}
-      <section className="py-16 bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section className="py-16 bg-gray-50" data-aos="fade-up">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8" data-aos="fade-up">
           <div className="flex justify-between items-center mb-12">
-            <h2 className="text-3xl font-bold">Featured Products</h2>
+            <h2 className="text-3xl font-bold" data-aos="fade-up">Featured Products</h2>
             <Link
               to="/products"
               className="text-primary-600 hover:text-primary-700 font-semibold flex items-center"
@@ -236,7 +247,7 @@ const Home = () => {
           </div>
 
           {loading ? (
-            <div className="flex justify-center">
+            <div className="flex justify-center" data-aos="fade-up">
               <div className="spinner"></div>
             </div>
           ) : (
@@ -260,13 +271,13 @@ const Home = () => {
       </section>
 
       {/* Event Banner Section */}
-      <EventBanner />
+      <EventBanner data-aos="fade-up" />
 
       {/* Discover More Products Section */}
-      <section className="py-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section className="py-16" data-aos="fade-up">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8" data-aos="fade-up">
           <div className="flex justify-between items-center mb-12">
-            <h2 className="text-3xl font-bold">Discover More Products</h2>
+            <h2 className="text-3xl font-bold" data-aos="fade-up">Discover More Products</h2>
             <Link
               to="/products"
               className="text-primary-600 hover:text-primary-700 font-semibold flex items-center"
@@ -293,15 +304,15 @@ const Home = () => {
         </div>
       </section>
 
-   <FoodCardsLayout/>
+   <FoodCardsLayout data-aos="fade-up"/>
   
    
 
       {/* Products You Might Like Section */}
-      <section className="py-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section className="py-16" data-aos="fade-up">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8" data-aos="fade-up">
           <div className="flex justify-between items-center mb-12">
-            <h2 className="text-3xl font-bold">Products You Might Like</h2>
+            <h2 className="text-3xl font-bold" data-aos="fade-up">Products You Might Like</h2>
             <Link
               to="/products"
               className="text-primary-600 hover:text-primary-700 font-semibold flex items-center"
@@ -328,18 +339,19 @@ const Home = () => {
         </div>
       </section>
 
-      <DeliveryBanner/>    
+      <DeliveryBanner data-aos="fade-up"/>    
 
       {/* CTA Section */}
-      <section className="py-16 bg-primary-600 text-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-3xl font-bold mb-4">Ready to Start Selling?</h2>
-          <p className="text-xl mb-8 text-primary-100">
+      <section className="py-16 bg-primary-600 text-white" data-aos="fade-up">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center" data-aos="fade-up">
+          <h2 className="text-3xl font-bold mb-4" data-aos="fade-up" >Ready to Start Selling?</h2>
+          <p className="text-xl mb-8 text-primary-100" data-aos="fade-up" >
             Join thousands of vendors and start your e-commerce journey today.
           </p>
           <Link
             to="/login"
             className="bg-white text-primary-600 px-8 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors inline-flex items-center"
+            data-aos="fade-up"
           >
             Become a Vendor
             <FaArrowRight className="ml-2" />
