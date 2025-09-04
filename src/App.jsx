@@ -22,6 +22,8 @@ import Categories from './pages/Categories.jsx';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import ScrollToTop from './components/common/ScrollToTop.jsx';
+import AOS from 'aos';
+import 'aos/dist/aos.css';
 
 function App() {
   const dispatch = useDispatch();
@@ -40,6 +42,17 @@ function App() {
       dispatch(fetchCart());
     }
   }, [dispatch, token, user]);
+
+  // Initialize AOS on app mount
+  useEffect(() => {
+    AOS.init({
+      duration: 800,
+      easing: 'ease-in-out-cubic',
+      once: true,
+      offset: 100,
+      delay: 0
+    });
+  }, []);
 
   return (
     <>

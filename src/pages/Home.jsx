@@ -186,11 +186,11 @@ const Home = () => {
 
         {/* Features Section */}
       <section className="py-0 bg-gray-50" data-aos="fade-up">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8" data-aos="fade-up">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Desktop Grid Layout */}
-          <div className="hidden md:grid md:grid-cols-2 lg:grid-cols-4 gap-8" data-aos="fade-up">
+          <div className="hidden md:grid md:grid-cols-2 lg:grid-cols-4 gap-8" >
             {features.map((feature, index) => (
-              <div key={index} className="text-center" data-aos="fade-up">
+              <div key={index} className="text-center">
                 <div className="text-primary-600 mb-4 flex justify-center">
                   {feature.icon}
                 </div>
@@ -201,8 +201,8 @@ const Home = () => {
           </div>
 
           {/* Mobile Carousel Layout */}
-          <div className="md:hidden " data-aos="fade-up" >
-            <Swiper
+          <div className="md:hidden "  >
+            <Swiper 
               modules={[Pagination]}
               spaceBetween={12}
               slidesPerView={1}
@@ -215,7 +215,7 @@ const Home = () => {
               className="features-swiper"
             >
               {features.map((feature, index) => (
-                <SwiperSlide key={index} data-aos="fade-up">
+                <SwiperSlide key={index} >
                   <div className="text-center bg-white rounded-xl p-2 shadow-lg border border-gray-200 mx-2">
                     <div className="text-primary-600 mb-3 flex justify-center">
                       <div className="text-2xl">
