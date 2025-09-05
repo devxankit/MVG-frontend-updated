@@ -6,6 +6,11 @@ const orderAPI = {
     return axiosInstance.post('/orders', orderData);
   },
 
+  // Create order for Razorpay
+  createOrderForRazorpay: (orderData) => {
+    return axiosInstance.post('/orders/razorpay', orderData);
+  },
+
   // Razorpay - get public key
   getRazorpayKey: () => {
     return axiosInstance.get('/orders/payments/razorpay/key');

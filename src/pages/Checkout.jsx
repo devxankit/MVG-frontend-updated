@@ -38,10 +38,21 @@ const Checkout = () => {
   const [couponStatus, setCouponStatus] = useState('');
   const [discount, setDiscount] = useState(0);
   const [appliedCoupon, setAppliedCoupon] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submissionTimeout, setSubmissionTimeout] = useState(null);
 
   useEffect(() => {
     dispatch(fetchCart());
   }, [dispatch]);
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (submissionTimeout) {
+        clearTimeout(submissionTimeout);
+      }
+    };
+  }, [submissionTimeout]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -64,9 +75,28 @@ const Checkout = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
+    // Prevent multiple submissions
+    if (isSubmitting) {
+      toast.warning('Order is already being processed...');
+      return;
+    }
+    
+    setIsSubmitting(true);
+    
+    // Set timeout to prevent stuck submissions
+    const timeout = setTimeout(() => {
+      if (isSubmitting) {
+        toast.error('Order submission timed out. Please try again.');
+        setIsSubmitting(false);
+      }
+    }, 30000); // 30 seconds timeout
+    setSubmissionTimeout(timeout);
+    
     // Validate cart
     if (cartItems.length === 0) {
       toast.error('Your cart is empty');
+      setIsSubmitting(false);
+      clearTimeout(timeout);
       return;
     }
 
@@ -75,6 +105,8 @@ const Checkout = () => {
     if (productsWithoutSellerInfo.length > 0) {
       const productNames = productsWithoutSellerInfo.map(item => item.product?.name || 'Unknown Product').join(', ');
       toast.error(`Some products in your cart are not available for purchase: ${productNames}. Please remove them to continue.`);
+      setIsSubmitting(false);
+      clearTimeout(timeout);
       return;
     }
 
@@ -82,20 +114,28 @@ const Checkout = () => {
     if (!formData.firstName || !formData.lastName || !formData.email || !formData.phone || 
         !formData.address || !formData.city || !formData.state || !formData.pincode) {
       toast.error('Please fill in all required fields');
+      setIsSubmitting(false);
+      clearTimeout(timeout);
       return;
     }
 
     // Validate payment method
     if (!paymentMethod) {
       toast.error('Please select a payment method');
+      setIsSubmitting(false);
+      clearTimeout(timeout);
       return;
     }
 
     // No card validation required
 
+    // Generate idempotency key to prevent duplicate orders
+    const orderIdempotencyKey = `order_${user._id}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    
     // Debug cart items
     console.log('Cart items:', cartItems);
     console.log('Cart total:', total);
+    console.log('Idempotency key:', orderIdempotencyKey);
     
     // Debug seller information
     cartItems.forEach((item, index) => {
@@ -131,39 +171,56 @@ const Checkout = () => {
       coupon: appliedCoupon,
       discount,
       total: total - discount,
+      orderIdempotencyKey,
     };
 
     console.log('Submitting order with data:', orderData);
 
     try {
       if (paymentMethod === 'razorpay') {
-        // 1) Create orders in backend (pending payment)
-        const createRes = await orderAPI.createOrder(orderData);
-        const created = createRes.data?.orders || [];
-        if (!created.length) {
-          toast.error('Failed to create order');
+        // 1) Create Razorpay order first
+        const amountPaise = Math.round((total - discount) * 100);
+        const rpOrderRes = await orderAPI.createRazorpayOrder({ amount: amountPaise, currency: 'INR', notes: { orderIdempotencyKey } });
+        const rpOrder = rpOrderRes.data?.order;
+        if (!rpOrder?.id) {
+          toast.error('Failed to initialize payment');
+          setIsSubmitting(false);
           return;
         }
+
+        // 2) Create orders in backend with Razorpay order ID
+        const orderDataWithRazorpay = {
+          ...orderData,
+          razorpay_order_id: rpOrder.id
+        };
+        
+        const createRes = await orderAPI.createOrderForRazorpay(orderDataWithRazorpay);
+        const created = createRes.data?.orders || [];
+        
+        // Check if this is a duplicate order
+        if (createRes.data?.isDuplicate) {
+          toast.info('Order already exists. Redirecting to payment...');
+        } else if (!created.length) {
+          toast.error('Failed to create order');
+          setIsSubmitting(false);
+          return;
+        }
+        
         const orderIds = created.map(o => o._id);
 
-        // 2) Init Razorpay
+        // 3) Init Razorpay
         const keyRes = await orderAPI.getRazorpayKey();
         const key = keyRes.data?.key;
         if (!key) {
           toast.error('Payment configuration error');
-          return;
-        }
-        const amountPaise = Math.round((total - discount) * 100);
-        const rpOrderRes = await orderAPI.createRazorpayOrder({ amount: amountPaise, currency: 'INR', notes: { orderCount: orderIds.length } });
-        const rpOrder = rpOrderRes.data?.order;
-        if (!rpOrder?.id) {
-          toast.error('Failed to initialize payment');
+          setIsSubmitting(false);
           return;
         }
 
         const loaded = await loadRazorpayScript();
         if (!loaded) {
           toast.error('Failed to load payment gateway');
+          setIsSubmitting(false);
           return;
         }
 
@@ -191,18 +248,26 @@ const Checkout = () => {
               if (captureRes.data?.success) {
                 dispatch(clearCart());
                 toast.success('Payment successful! Order confirmed.');
+                setIsSubmitting(false);
+                clearTimeout(submissionTimeout);
                 navigate('/profile');
               } else {
                 toast.error('Payment capture failed');
+                setIsSubmitting(false);
+                clearTimeout(submissionTimeout);
               }
             } catch (err) {
               console.error('Payment verification/capture error:', err);
               toast.error(err.response?.data?.message || 'Payment verification failed');
+              setIsSubmitting(false);
+              clearTimeout(submissionTimeout);
             }
           },
           modal: {
             ondismiss: function () {
               toast.info('Payment cancelled');
+              setIsSubmitting(false);
+              clearTimeout(submissionTimeout);
             },
           },
         };
@@ -217,13 +282,19 @@ const Checkout = () => {
       if (result.meta.requestStatus === 'fulfilled') {
         dispatch(clearCart());
         toast.success('Order placed successfully!');
+        setIsSubmitting(false);
+        clearTimeout(submissionTimeout);
         navigate('/profile');
       } else if (result.meta.requestStatus === 'rejected') {
         toast.error(result.payload || 'Failed to place order');
+        setIsSubmitting(false);
+        clearTimeout(submissionTimeout);
       }
     } catch (err) {
       console.error('Order creation error:', err);
       toast.error('Failed to place order. Please try again.');
+      setIsSubmitting(false);
+      clearTimeout(submissionTimeout);
     }
   };
 
@@ -233,6 +304,13 @@ const Checkout = () => {
     setDiscount(0);
     setAppliedCoupon(null);
     if (!coupon) return;
+    
+    // Prevent coupon application during order submission
+    if (isSubmitting) {
+      toast.warning('Cannot apply coupon while order is being processed');
+      return;
+    }
+    
     // Simulate coupon
     if (coupon === 'INDIA10') {
       setDiscount(0.1 * total);
@@ -353,10 +431,10 @@ const Checkout = () => {
             {/* Place Order Button */}
             <button 
               type="submit" 
-              disabled={cartLoading || orderLoading}
+              disabled={cartLoading || orderLoading || isSubmitting}
               className="w-full bg-blue-600 text-white py-3 px-6 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
             >
-              {cartLoading || orderLoading ? (
+              {cartLoading || orderLoading || isSubmitting ? (
                 <>
                   <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"></circle>
