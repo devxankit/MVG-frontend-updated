@@ -51,7 +51,7 @@ const FoodCardsLayout = () => {
 
   const CardComponent = ({ card, className }) => (
     <Card 
-      className={`rounded-2xl h-64 overflow-hidden relative transition-all duration-500 hover:scale-[1.02] hover:shadow-2xl border-0 cursor-pointer group ${className}`}
+      className={`rounded-2xl h-64 overflow-hidden relative transition-all duration-500 hover:scale-[1.02] hover:shadow-2xl border-0 cursor-pointer group w-full ${className}`}
       style={{
         backgroundImage: `url(${card.imageUrl})`,
         backgroundSize: 'cover',
@@ -67,8 +67,8 @@ const FoodCardsLayout = () => {
       <div className={`absolute inset-0 bg-gradient-to-r ${card.gradient} group-hover:from-black/40 group-hover:via-black/20 transition-all duration-500`} />
       
       {/* Content positioned in center-left with staggered animations */}
-      <div className="relative z-10 h-full flex items-center justify-start p-8">
-        <div className="max-w-xs">
+      <div className="relative z-10 h-full flex items-center justify-start p-8 overflow-hidden">
+        <div className="max-w-xs w-full">
           <h2 
             className="text-3xl font-bold text-white mb-2 tracking-tight drop-shadow-lg transform group-hover:translate-x-2 transition-all duration-500"
             data-aos="fade-up"
@@ -107,51 +107,53 @@ const FoodCardsLayout = () => {
   );
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
-      {/* Section title with fade-in animation */}
-      <div 
-        className="text-center mb-12"
-        data-aos="fade-down"
-        data-aos-duration="1000"
-        data-aos-delay="100"
-      >
-        <h2 className="text-4xl font-bold text-gray-800 mb-4">Discover Fresh & Healthy</h2>
-        <p className="text-gray-600 text-lg">Premium quality products at unbeatable prices</p>
-      </div>
-
-      <div className="grid grid-cols-12 gap-6">
-        {/* First Row */}
-        <div className="col-span-12 lg:col-span-5">
-          <CardComponent card={cards[0]} />
-        </div>
-
-        <div className="col-span-12 lg:col-span-7">
-          <CardComponent card={cards[1]} />
-        </div>
-
-        {/* Second Row */}
-        <div className="col-span-12 lg:col-span-7">
-          <CardComponent card={cards[2]} />
-        </div>
-
-        <div className="col-span-12 lg:col-span-5">
-          <CardComponent card={cards[3]} />
-        </div>
-      </div>
-
-      {/* Call-to-action section with enhanced animation */}
-      <div 
-        className="text-center mt-16"
-        data-aos="fade-up"
-        data-aos-duration="1200"
-        data-aos-delay="800"
-      >
-        <Button 
-          className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white px-8 py-4 rounded-full text-lg font-semibold transition-all duration-300 shadow-xl hover:shadow-2xl hover:scale-105 border-0"
-          onClick={() => navigate(`/products`)}
+    <div className="w-full overflow-hidden">
+      <div className="p-6 max-w-7xl mx-auto">
+        {/* Section title with fade-in animation */}
+        <div 
+          className="text-center mb-12"
+          data-aos="fade-down"
+          data-aos-duration="1000"
+          data-aos-delay="100"
         >
-          Explore All Products
-        </Button>
+          <h2 className="text-4xl font-bold text-gray-800 mb-4">Discover Fresh & Healthy</h2>
+          <p className="text-gray-600 text-lg">Premium quality products at unbeatable prices</p>
+        </div>
+
+        <div className="grid grid-cols-12 gap-6 w-full">
+          {/* First Row */}
+          <div className="col-span-12 lg:col-span-5 w-full">
+            <CardComponent card={cards[0]} />
+          </div>
+
+          <div className="col-span-12 lg:col-span-7 w-full">
+            <CardComponent card={cards[1]} />
+          </div>
+
+          {/* Second Row */}
+          <div className="col-span-12 lg:col-span-7 w-full">
+            <CardComponent card={cards[2]} />
+          </div>
+
+          <div className="col-span-12 lg:col-span-5 w-full">
+            <CardComponent card={cards[3]} />
+          </div>
+        </div>
+
+        {/* Call-to-action section with enhanced animation */}
+        <div 
+          className="text-center mt-16"
+          data-aos="fade-up"
+          data-aos-duration="1200"
+          data-aos-delay="800"
+        >
+          <Button 
+            className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white px-8 py-4 rounded-full text-lg font-semibold transition-all duration-300 shadow-xl hover:shadow-2xl hover:scale-105 border-0"
+            onClick={() => navigate(`/products`)}
+          >
+            Explore All Products
+          </Button>
+        </div>
       </div>
     </div>
   );

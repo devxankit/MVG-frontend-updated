@@ -1,15 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import { FaUser, FaEnvelope, FaPhone, FaMapMarkerAlt, FaEdit, FaSave, FaTimes, FaEye } from 'react-icons/fa';
 import { formatINR } from '../utils/formatCurrency';
 import orderAPI from '../api/orderAPI';
+import { updateProfile } from '../redux/slices/authSlice';
+import { toast } from 'react-toastify';
 
 const ORDER_STATUSES = [
   'pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled', 'refunded'
 ];
 
 const Profile = () => {
-  const { user } = useSelector((state) => state.auth);
+  const dispatch = useDispatch();
+  const { user, loading: authLoading, error: authError } = useSelector((state) => state.auth);
   const [isEditing, setIsEditing] = useState(false);
   const [profileData, setProfileData] = useState({
     firstName: '',
@@ -22,6 +25,8 @@ const Profile = () => {
     pincode: '',
     country: 'India',
   });
+  const [originalData, setOriginalData] = useState({});
+  const [isSaving, setIsSaving] = useState(false);
   const [orders, setOrders] = useState([]);
   const [ordersLoading, setOrdersLoading] = useState(false);
   const [ordersError, setOrdersError] = useState('');
@@ -33,7 +38,7 @@ const Profile = () => {
 
   useEffect(() => {
     if (user) {
-      setProfileData({
+      const userData = {
         firstName: user.firstName || '',
         lastName: user.lastName || '',
         email: user.email || '',
@@ -42,8 +47,10 @@ const Profile = () => {
         city: user.city || '',
         state: user.state || '',
         pincode: user.pincode || '',
-        country: 'India',
-      });
+        country: user.country || 'India',
+      };
+      setProfileData(userData);
+      setOriginalData(userData);
     }
   }, [user]);
 
@@ -71,14 +78,63 @@ const Profile = () => {
     }));
   };
 
-  const handleSave = () => {
-    // Save profile data logic here
-    console.log('Profile updated:', profileData);
-    setIsEditing(false);
+  const handleSave = async () => {
+    // Validate required fields
+    if (!profileData.firstName || !profileData.lastName) {
+      toast.error('Please fill in all required fields (First Name, Last Name)');
+      return;
+    }
+
+    // Validate phone format (if provided)
+    if (profileData.phone && !/^[6-9]\d{9}$/.test(profileData.phone)) {
+      toast.error('Please enter a valid 10-digit phone number');
+      return;
+    }
+
+    // Validate pincode format (if provided)
+    if (profileData.pincode && !/^[1-9][0-9]{5}$/.test(profileData.pincode)) {
+      toast.error('Please enter a valid 6-digit pincode');
+      return;
+    }
+
+    // Check if there are any changes to save
+    const hasChanges = Object.keys(profileData).some(key => 
+      profileData[key] !== originalData[key]
+    );
+    
+    if (!hasChanges) {
+      toast.info('No changes to save');
+      setIsEditing(false);
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      const result = await dispatch(updateProfile(profileData));
+      if (result.meta.requestStatus === 'fulfilled') {
+        setOriginalData(profileData);
+        setIsEditing(false);
+        toast.success('Profile updated successfully!');
+      } else {
+        // Handle specific error cases
+        const errorMessage = result.payload || 'Failed to update profile';
+        if (typeof errorMessage === 'string') {
+          toast.error(errorMessage);
+        } else if (errorMessage.errors && errorMessage.errors.length > 0) {
+          toast.error(errorMessage.errors[0]);
+        } else {
+          toast.error(errorMessage.message || 'Failed to update profile');
+        }
+      }
+    } catch (error) {
+      toast.error('An error occurred while updating profile');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleCancel = () => {
-    // Reset to original data
+    setProfileData(originalData);
     setIsEditing(false);
   };
 
@@ -154,14 +210,28 @@ const Profile = () => {
                 <div className="flex gap-2">
                   <button
                     onClick={handleSave}
-                    className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+                    disabled={isSaving}
+                    className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    <FaSave />
-                    Save
+                    {isSaving ? (
+                      <>
+                        <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Saving...
+                      </>
+                    ) : (
+                      <>
+                        <FaSave />
+                        Save
+                      </>
+                    )}
                   </button>
                   <button
                     onClick={handleCancel}
-                    className="flex items-center gap-2 bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700"
+                    disabled={isSaving}
+                    className="flex items-center gap-2 bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <FaTimes />
                     Cancel
@@ -199,10 +269,10 @@ const Profile = () => {
                   type="email"
                   name="email"
                   value={profileData.email}
-                  onChange={handleInputChange}
-                  disabled={!isEditing}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
+                  disabled={true}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-100 text-gray-500 cursor-not-allowed"
                 />
+                <p className="text-xs text-gray-500 mt-1">Email cannot be changed for security reasons</p>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Phone</label>

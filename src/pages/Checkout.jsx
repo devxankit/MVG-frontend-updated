@@ -31,8 +31,9 @@ const Checkout = () => {
     city: user?.city || '',
     state: user?.state || '',
     pincode: user?.pincode || '',
-    country: 'India',
+    country: user?.country || 'India',
   });
+  const [useProfileAddress, setUseProfileAddress] = useState(true);
   const [paymentMethod, setPaymentMethod] = useState('razorpay');
   const [coupon, setCoupon] = useState('');
   const [couponStatus, setCouponStatus] = useState('');
@@ -44,6 +45,23 @@ const Checkout = () => {
   useEffect(() => {
     dispatch(fetchCart());
   }, [dispatch]);
+
+  // Update form data when user data changes
+  useEffect(() => {
+    if (user && useProfileAddress) {
+      setFormData({
+        firstName: user.firstName || '',
+        lastName: user.lastName || '',
+        email: user.email || '',
+        phone: user.phone || '',
+        address: user.address || '',
+        city: user.city || '',
+        state: user.state || '',
+        pincode: user.pincode || '',
+        country: user.country || 'India',
+      });
+    }
+  }, [user, useProfileAddress]);
 
   // Cleanup timeout on unmount
   useEffect(() => {
@@ -57,6 +75,23 @@ const Checkout = () => {
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleAddressToggle = (useProfile) => {
+    setUseProfileAddress(useProfile);
+    if (useProfile && user) {
+      setFormData({
+        firstName: user.firstName || '',
+        lastName: user.lastName || '',
+        email: user.email || '',
+        phone: user.phone || '',
+        address: user.address || '',
+        city: user.city || '',
+        state: user.state || '',
+        pincode: user.pincode || '',
+        country: user.country || 'India',
+      });
+    }
   };
 
   // No card input handling required (only Razorpay and COD)
@@ -111,7 +146,7 @@ const Checkout = () => {
     }
 
     // Validate form data
-    if (!formData.firstName || !formData.lastName || !formData.email || !formData.phone || 
+    if (!formData.firstName || !formData.lastName || !formData.phone || 
         !formData.address || !formData.city || !formData.state || !formData.pincode) {
       toast.error('Please fill in all required fields');
       setIsSubmitting(false);
@@ -339,7 +374,48 @@ const Checkout = () => {
           <form onSubmit={handleSubmit} className="space-y-8">
             {/* Shipping Information */}
             <div className="bg-white rounded-lg shadow-lg border border-gray-100 p-6">
-              <h2 className="text-xl font-semibold text-gray-800 mb-4">Shipping Information</h2>
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-semibold text-gray-800">Shipping Information</h2>
+                {user && (user.address || user.city || user.state) && (
+                  <div className="flex items-center space-x-4">
+                    <label className="flex items-center">
+                      <input
+                        type="radio"
+                        name="addressOption"
+                        checked={useProfileAddress}
+                        onChange={() => handleAddressToggle(true)}
+                        className="mr-2"
+                      />
+                      <span className="text-sm text-gray-700">Use Profile Address</span>
+                    </label>
+                    <label className="flex items-center">
+                      <input
+                        type="radio"
+                        name="addressOption"
+                        checked={!useProfileAddress}
+                        onChange={() => handleAddressToggle(false)}
+                        className="mr-2"
+                      />
+                      <span className="text-sm text-gray-700">Different Address</span>
+                    </label>
+                  </div>
+                )}
+              </div>
+              {useProfileAddress && user && (user.address || user.city || user.state) && (
+                <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+                  <div className="flex justify-between items-start">
+                    <p className="text-sm text-green-800">
+                      <strong>Using profile address:</strong> {user.firstName} {user.lastName}, {user.address}, {user.city}, {user.state} {user.pincode}
+                    </p>
+                    <Link 
+                      to="/profile" 
+                      className="text-xs text-green-600 hover:text-green-800 underline ml-2"
+                    >
+                      Update Profile
+                    </Link>
+                  </div>
+                </div>
+              )}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">First Name</label>
@@ -351,7 +427,14 @@ const Checkout = () => {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
-                  <input type="email" name="email" value={formData.email} onChange={handleInputChange} required className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent" />
+                  <input 
+                    type="email" 
+                    name="email" 
+                    value={formData.email} 
+                    disabled={true}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-100 text-gray-500 cursor-not-allowed" 
+                  />
+                  <p className="text-xs text-gray-500 mt-1">Email cannot be changed for security reasons</p>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Phone</label>

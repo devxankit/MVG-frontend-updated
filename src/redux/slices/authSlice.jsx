@@ -54,6 +54,18 @@ export const getCurrentUser = createAsyncThunk(
   }
 );
 
+export const updateProfile = createAsyncThunk(
+  'auth/updateProfile',
+  async (userData, { rejectWithValue }) => {
+    try {
+      const response = await authAPI.updateProfile(userData);
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to update profile');
+    }
+  }
+);
+
 export const logout = createAsyncThunk(
   'auth/logout',
   async () => {
@@ -143,6 +155,19 @@ const authSlice = createSlice({
         state.user = null;
         state.token = null;
         localStorage.removeItem('token');
+      })
+      // Update profile
+      .addCase(updateProfile.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(updateProfile.fulfilled, (state, action) => {
+        state.loading = false;
+        state.user = { ...state.user, ...action.payload.data };
+      })
+      .addCase(updateProfile.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
       })
       // Logout
       .addCase(logout.fulfilled, (state) => {

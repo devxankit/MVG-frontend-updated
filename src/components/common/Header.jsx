@@ -133,10 +133,6 @@ const Header = () => {
               <Link to="/" className={getLinkStyles('/')}>Home</Link>
               <Link to="/products" className={getLinkStyles('/products')}>Products</Link>
               <Link to="/categories" className={getLinkStyles('/categories')}>Categories</Link>
-              {/* Conditionally render Become a Vendor */}
-              {(!isAuthenticated || (user && user.role !== 'seller') || (user && user.role === 'admin')) && (
-                <Link to="/login" className="px-1.5 py-1 rounded transition-colors duration-200 hover:bg-primary-50 hover:text-primary-600 text-gray-700">Become a Vendor</Link>
-              )}
             </nav>
           </div>
 
@@ -281,9 +277,6 @@ const Header = () => {
           <Link to="/" className={`nav-link px-2 py-2 rounded transition-colors duration-200 ${isActiveLink('/') ? 'bg-green-100 text-green-700 font-medium' : 'hover:bg-primary-50 hover:text-primary-600'}`} onClick={() => setIsMenuOpen(false)}>Home</Link>
           <Link to="/products" className={`nav-link px-2 py-2 rounded transition-colors duration-200 ${isActiveLink('/products') ? 'bg-green-100 text-green-700 font-medium' : 'hover:bg-primary-50 hover:text-primary-600'}`} onClick={() => setIsMenuOpen(false)}>Products</Link>
           <Link to="/categories" className={`nav-link px-2 py-2 rounded transition-colors duration-200 ${isActiveLink('/categories') ? 'bg-green-100 text-green-700 font-medium' : 'hover:bg-primary-50 hover:text-primary-600'}`} onClick={() => setIsMenuOpen(false)}>Categories</Link>
-          {(!isAuthenticated || (user && user.role !== 'seller') || (user && user.role === 'admin')) && (
-            <Link to="/login" className="nav-link px-2 py-2 rounded hover:bg-primary-50 hover:text-primary-600 transition-colors duration-200" onClick={() => setIsMenuOpen(false)}>Become a Vendor</Link>
-          )}
           {isAuthenticated && user?.role === 'seller' && (
             <Link to="/seller/dashboard" className="nav-link px-2 py-2 rounded hover:bg-primary-50 hover:text-primary-600 transition-colors duration-200" onClick={() => setIsMenuOpen(false)}>Seller Dashboard</Link>
           )}

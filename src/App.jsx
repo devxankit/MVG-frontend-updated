@@ -50,7 +50,17 @@ function App() {
       easing: 'ease-in-out-cubic',
       once: true,
       offset: 100,
-      delay: 0
+      delay: 0,
+      disable: false,
+      startEvent: 'DOMContentLoaded',
+      initClassName: 'aos-init',
+      animatedClassName: 'aos-animate',
+      useClassNames: false,
+      disableMutationObserver: false,
+      debounceDelay: 50,
+      throttleDelay: 99,
+      mirror: false,
+      anchorPlacement: 'top-bottom'
     });
   }, []);
 
