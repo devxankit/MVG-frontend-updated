@@ -11,6 +11,8 @@ import ProductDetail from './pages/ProductDetail.jsx';
 import Cart from './pages/Cart.jsx';
 import Checkout from './pages/Checkout.jsx';
 import Profile from './pages/Profile.jsx';
+import Orders from './pages/Orders.jsx';
+import OrderDetails from './pages/OrderDetails.jsx';
 import SellerDashboard from './pages/SellerDashboard.jsx';
 import AdminDashboard from './pages/AdminDashboard.jsx';
 import ProtectedRoute from './components/common/ProtectedRoute.jsx';
@@ -93,6 +95,16 @@ function App() {
             <Route path="/profile" element={
               <ProtectedRoute>
                 <Profile />
+              </ProtectedRoute>
+            } />
+            <Route path="/orders" element={
+              <ProtectedRoute>
+                <Orders />
+              </ProtectedRoute>
+            } />
+            <Route path="/order/:orderId" element={
+              <ProtectedRoute>
+                <OrderDetails />
               </ProtectedRoute>
             } />
             

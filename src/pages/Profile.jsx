@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { FaUser, FaEnvelope, FaPhone, FaMapMarkerAlt, FaEdit, FaSave, FaTimes, FaEye } from 'react-icons/fa';
+import { useNavigate } from 'react-router-dom';
+import { FaUser, FaEnvelope, FaPhone, FaMapMarkerAlt, FaEdit, FaSave, FaTimes, FaEye, FaShoppingBag } from 'react-icons/fa';
 import { formatINR } from '../utils/formatCurrency';
 import orderAPI from '../api/orderAPI';
 import { updateProfile } from '../redux/slices/authSlice';
@@ -12,6 +13,7 @@ const ORDER_STATUSES = [
 
 const Profile = () => {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const { user, loading: authLoading, error: authError } = useSelector((state) => state.auth);
   const [isEditing, setIsEditing] = useState(false);
   const [profileData, setProfileData] = useState({
@@ -34,7 +36,6 @@ const Profile = () => {
   const [showOrderModal, setShowOrderModal] = useState(false);
   const [cancelLoading, setCancelLoading] = useState(false);
   const [cancelError, setCancelError] = useState('');
-  const [showOrderDrawer, setShowOrderDrawer] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -151,37 +152,9 @@ const Profile = () => {
     }
   };
 
-  // Handler to open order modal
-  const handleViewOrder = (order) => {
-    setSelectedOrder(order);
-    setShowOrderModal(true);
-    setCancelError('');
-  };
-
-  // Handler to close order modal
-  const handleCloseOrderModal = () => {
-    setSelectedOrder(null);
-    setShowOrderModal(false);
-    setCancelError('');
-  };
-
-  // Handler to cancel order
-  const handleCancelOrder = async () => {
-    if (!selectedOrder) return;
-    setCancelLoading(true);
-    setCancelError('');
-    try {
-      await orderAPI.cancelOrder(selectedOrder._id);
-      setSelectedOrder({ ...selectedOrder, orderStatus: 'cancelled' });
-      setCancelLoading(false);
-      setShowOrderModal(false);
-      // Optionally, refetch orders or update local state
-      const res = await orderAPI.getOrders();
-      setOrders(res.data.orders || []);
-    } catch (err) {
-      setCancelError(err.response?.data?.message || 'Failed to cancel order');
-      setCancelLoading(false);
-    }
+  // Handler to view order details
+  const handleViewOrder = (orderId) => {
+    navigate(`/order/${orderId}`);
   };
 
   return (
@@ -372,11 +345,11 @@ const Profile = () => {
             <div className="space-y-3">
               <button
                 className="w-full text-left p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
-                onClick={() => setShowOrderDrawer(true)}
+                onClick={() => navigate('/orders')}
               >
                 <div className="flex items-center gap-3">
-                  <FaUser className="text-blue-600" />
-                  <span>View Order History</span>
+                  <FaShoppingBag className="text-blue-600" />
+                  <span>View All Orders</span>
                 </div>
               </button>
               <button className="w-full text-left p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
@@ -396,112 +369,93 @@ const Profile = () => {
         </div>
       </div>
 
-      {/* Order History Side Drawer */}
-      {showOrderDrawer && (
-        <div className="fixed inset-0 z-50 flex">
-          {/* Overlay */}
-          <div className="fixed inset-0 bg-black bg-opacity-40" onClick={() => setShowOrderDrawer(false)}></div>
-          {/* Drawer */}
-          <div className="relative ml-auto w-full max-w-lg h-full bg-white shadow-lg p-6 overflow-y-auto animate-slide-in-right-slow">
-            <button className="absolute top-2 right-2 text-gray-400 hover:text-gray-600 text-2xl" onClick={() => setShowOrderDrawer(false)}>&times;</button>
-            <h2 className="text-2xl font-bold mb-4">Order History</h2>
-            {ordersLoading ? (
-              <div>Loading...</div>
-            ) : ordersError ? (
-              <div className="text-red-600">{ordersError}</div>
-            ) : orders.length === 0 ? (
-              <div>No orders found.</div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b border-gray-200">
-                      <th className="text-left py-3 px-4 font-medium text-gray-700">Order ID</th>
-                      <th className="text-left py-3 px-4 font-medium text-gray-700">Date</th>
-                      <th className="text-left py-3 px-4 font-medium text-gray-700">Status</th>
-                      <th className="text-left py-3 px-4 font-medium text-gray-700">Total</th>
-                      <th className="text-left py-3 px-4 font-medium text-gray-700">Items</th>
-                      <th className="text-left py-3 px-4 font-medium text-gray-700">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {orders.map(order => (
-                      <tr key={order._id} className="border-b border-gray-100 hover:bg-gray-50">
-                        <td className="py-3 px-4 font-medium text-blue-600">{order.orderNumber || order._id}</td>
-                        <td className="py-3 px-4">{new Date(order.createdAt).toLocaleDateString()}</td>
-                        <td className="py-3 px-4">
-                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${order.orderStatus === 'delivered' ? 'bg-green-100 text-green-600' : order.orderStatus === 'shipped' ? 'bg-blue-100 text-blue-600' : order.orderStatus === 'cancelled' ? 'bg-red-100 text-red-600' : 'bg-gray-100 text-gray-600'}`}>{order.orderStatus}</span>
-                        </td>
-                        <td className="py-3 px-4">{formatINR(order.totalPrice)}</td>
-                        <td className="py-3 px-4">{order.orderItems?.map(item => `${item.name} (x${item.quantity})`).join(', ')}</td>
-                        <td className="py-3 px-4">
-                          <button className="text-blue-600 hover:text-blue-800" onClick={() => handleViewOrder(order)}><FaEye /></button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
+      {/* Recent Orders Section */}
+      <div className="mt-8">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-2xl font-bold text-gray-800">Recent Orders</h2>
+          <button
+            onClick={() => navigate('/orders')}
+            className="text-blue-600 hover:text-blue-800 font-medium"
+          >
+            View All Orders
+          </button>
+        </div>
 
-            {/* Order Details Modal (inside drawer) */}
-            {showOrderModal && selectedOrder && (
-              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
-                <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-2xl mx-2 relative overflow-y-auto max-h-[90vh]">
-                  <button className="absolute top-2 right-2 text-gray-400 hover:text-gray-600 text-2xl" onClick={handleCloseOrderModal}>&times;</button>
-                  <h2 className="text-2xl font-bold mb-2">Order Details</h2>
-                  <div className="mb-2 text-sm text-gray-600">Order ID: <span className="font-mono">{selectedOrder.orderNumber || selectedOrder._id}</span></div>
-                  <div className="mb-2 text-sm text-gray-600">Date: {new Date(selectedOrder.createdAt).toLocaleString()}</div>
-                  <div className="mb-2 text-sm text-gray-600">Status: <span className={`px-2 py-1 rounded-full text-xs font-medium ${selectedOrder.orderStatus === 'delivered' ? 'bg-green-100 text-green-600' : selectedOrder.orderStatus === 'shipped' ? 'bg-blue-100 text-blue-600' : selectedOrder.orderStatus === 'cancelled' ? 'bg-red-100 text-red-600' : 'bg-gray-100 text-gray-600'}`}>{selectedOrder.orderStatus}</span></div>
-                  <div className="mb-2 text-sm text-gray-600">Payment: {selectedOrder.paymentMethod}</div>
-                  <div className="mb-4 text-sm text-gray-600">Shipping: {selectedOrder.shippingAddress?.firstName} {selectedOrder.shippingAddress?.lastName}, {selectedOrder.shippingAddress?.address || selectedOrder.shippingAddress?.street}, {selectedOrder.shippingAddress?.city}, {selectedOrder.shippingAddress?.state}, {selectedOrder.shippingAddress?.pincode || selectedOrder.shippingAddress?.zipCode}, {selectedOrder.shippingAddress?.country}</div>
-                  <h3 className="text-lg font-semibold mb-2">Products</h3>
-                  <div className="overflow-x-auto mb-4">
-                    <table className="min-w-full text-sm">
-                      <thead>
-                        <tr>
-                          <th className="py-2 px-2 text-left">Image</th>
-                          <th className="py-2 px-2 text-left">Name</th>
-                          <th className="py-2 px-2 text-left">Price</th>
-                          <th className="py-2 px-2 text-left">Qty</th>
-                          <th className="py-2 px-2 text-left">Subtotal</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {selectedOrder.orderItems?.map((item, idx) => (
-                          <tr key={idx}>
-                            <td className="py-2 px-2">
-                              <img src={item.product?.images?.[0]?.url || item.image || '/product-images/default.webp'} alt={item.product?.name || item.name} className="w-12 h-12 object-cover rounded" />
-                            </td>
-                            <td className="py-2 px-2">{item.product?.name || item.name}</td>
-                            <td className="py-2 px-2">{formatINR(item.price)}</td>
-                            <td className="py-2 px-2">{item.quantity}</td>
-                            <td className="py-2 px-2">{formatINR(item.price * item.quantity)}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                  <div className="text-right font-bold text-lg mb-4">Total: {formatINR(selectedOrder.total || selectedOrder.totalPrice)}</div>
-                  {/* Cancel Order Button */}
-                  {['pending', 'confirmed', 'processing'].includes(selectedOrder.orderStatus) && (
-                    <div className="mb-2">
-                      <button
-                        className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 disabled:opacity-50"
-                        onClick={handleCancelOrder}
-                        disabled={cancelLoading}
-                      >
-                        {cancelLoading ? 'Cancelling...' : 'Cancel Order'}
-                      </button>
-                      {cancelError && <div className="text-red-600 text-xs mt-1">{cancelError}</div>}
+        {ordersLoading ? (
+          <div className="bg-white rounded-lg shadow-md p-8 text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+            <p className="mt-4 text-gray-600">Loading orders...</p>
+          </div>
+        ) : ordersError ? (
+          <div className="bg-white rounded-lg shadow-md p-8 text-center">
+            <div className="text-red-600 mb-4">Failed to load orders</div>
+            <button
+              onClick={() => window.location.reload()}
+              className="text-blue-600 hover:text-blue-800"
+            >
+              Try Again
+            </button>
+          </div>
+        ) : orders.length === 0 ? (
+          <div className="bg-white rounded-lg shadow-md p-8 text-center">
+            <FaShoppingBag className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">No Orders Yet</h3>
+            <p className="text-gray-600 mb-6">You haven't placed any orders yet. Start shopping to see your orders here.</p>
+            <button
+              onClick={() => navigate('/')}
+              className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              Start Shopping
+            </button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {orders.slice(0, 6).map((order) => (
+              <div key={order._id} className="bg-white rounded-lg shadow-md border border-gray-200 hover:shadow-lg transition-shadow">
+                <div className="p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <div>
+                      <h3 className="font-semibold text-gray-900">#{order.orderNumber || order._id.slice(-8)}</h3>
+                      <p className="text-sm text-gray-600">{new Date(order.createdAt).toLocaleDateString()}</p>
                     </div>
-                  )}
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(order.orderStatus)}`}>
+                      {order.orderStatus.charAt(0).toUpperCase() + order.orderStatus.slice(1)}
+                    </span>
+                  </div>
+
+                  <div className="space-y-2 mb-4">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">Items:</span>
+                      <span className="font-medium">{order.orderItems?.length || 0}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">Total:</span>
+                      <span className="font-medium">{formatINR(order.totalPrice)}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">Payment:</span>
+                      <span className="font-medium capitalize">{order.paymentMethod}</span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <button
+                      onClick={() => handleViewOrder(order._id)}
+                      className="flex items-center text-blue-600 hover:text-blue-800 text-sm font-medium"
+                    >
+                      <FaEye className="h-4 w-4 mr-1" />
+                      View Details
+                    </button>
+                    {order.trackingNumber && (
+                      <span className="text-xs text-green-600 font-medium">Tracked</span>
+                    )}
+                  </div>
                 </div>
               </div>
-            )}
+            ))}
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 };
